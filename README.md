@@ -1,13 +1,13 @@
-# FIT-FIRST
+# Thera-Fits
 
-A website prototype that helps 18–24-year-olds who haven't started therapy yet find a therapist who fits them. It's a University of Sydney MEDS3888 design project by Group 13 (Lived Experience). "FIT-FIRST" is a working name.
+A website prototype that helps 18–24-year-olds who haven't started therapy yet find a therapist who fits them. It's a University of Sydney MEDS3888 design project by Group 13 (Lived Experience).
 
 There are two prototypes:
 
 - **`App/`, the basic prototype:** the full flow a person would go through, from 15 questions to a shortlist of three.
 - **`Explainer/`, the matching explainer:** six questions and a behind-the-scenes view of how matching decides, with a choice of ranking systems. It's for the project team and supervisor, not for end users.
 
-> **Demo only.** Every therapist profile is fictional. FIT-FIRST doesn't provide therapy, diagnosis or medical advice, and nothing you enter leaves your browser. If you need support now, call Lifeline on **13 11 14**, or **000** in an emergency.
+> **Demo only.** Every therapist profile is fictional. Thera-Fits doesn't provide therapy, diagnosis or medical advice, and nothing you enter leaves your browser. If you need support now, call Lifeline on **13 11 14**, or **000** in an emergency.
 
 ## Try the basic prototype
 

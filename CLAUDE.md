@@ -1,6 +1,6 @@
-# FIT-FIRST: MEDS3888 G13 (Lived Experience)
+# Thera-Fits: MEDS3888 G13 (Lived Experience)
 
-USYD design project. A website prototype that helps 18–24-year-olds who have **not yet started therapy** find a therapist who fits them. Self-management is out of the MVP. Luis builds the prototype; the rest of the group (Allysa, Auriel, Gabriella, Shahad, Vanessa) does research and questions; supervisor is Dr Belal Chami. "FIT-FIRST" is a working name; the final name is undecided.
+USYD design project. A website prototype that helps 18–24-year-olds who have **not yet started therapy** find a therapist who fits them. Self-management is out of the MVP. Luis builds the prototype; the rest of the group (Allysa, Auriel, Gabriella, Shahad, Vanessa) does research and questions; supervisor is Dr Belal Chami. The site is called "Thera-Fits" (renamed from the working name "FIT-FIRST" on 15/10).
 
 ## Project rules (decided by the group, don't re-litigate)
 - **MVP scope: matchmaking only, patient-focused.** 8 fictional therapists as plain seeded data in their own file. No therapist account, no self-management (questionnaire Q11–Q15 are out of the flow). Verify matching against fictional test patients, not by eye.
@@ -57,4 +57,4 @@ No build or package.json. Node is installed on the Linux machine, not on the Win
 - **Built (`Explainer/`, 14/10):** six questions → live behind-the-scenes view: three ranking systems (research-guided, simple checklist, access first), step counts, every therapist's stacked points bar with moves after each change, per-therapist breakdown table, shortlist comparison across systems. Tests 42/42, 1 open (the same patient A / Priya question).
 - **Not built in `App/`:** therapist detail page, feedback screen, top-3-priorities step.
 - **Deferred:** self-management (only "if we have extra time"); therapist-side account and questions.
-- **Open:** whether the priorities flow stays or the questionnaire replaces it (leaning: questionnaire → top 3 priorities → shortlist of 3); app name; deadline and what is assessed (not in the notes); Q3/Q7 and the "essential" toggle (see the proposal's open questions).
+- **Open:** whether the priorities flow stays or the questionnaire replaces it (leaning: questionnaire → top 3 priorities → shortlist of 3); deadline and what is assessed (not in the notes); Q3/Q7 and the "essential" toggle (see the proposal's open questions).

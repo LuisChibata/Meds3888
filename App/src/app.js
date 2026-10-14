@@ -47,7 +47,7 @@
       "See three fictional therapist profiles, and why each one might or might not suit you.",
     ];
     return h(Page, null,
-      h("p", { className: "font-display text-lg font-semibold tracking-tight text-accent" }, "FIT-FIRST"),
+      h("p", { className: "font-display text-lg font-semibold tracking-tight text-accent" }, "Thera-Fits"),
       h(ScreenTitle, { className: "mt-3" }, "Find a therapist who fits you, before your first session."),
       h("p", { className: "mt-5 text-lg leading-relaxed text-muted" }, "Starting therapy is easier when you know what you're looking for. Tell us what matters to you and we'll show you who lines up, and where they don't."),
       h("ul", { className: "mt-8 space-y-3" }, points.map((p) => h("li", { key: p, className: "flex gap-3 leading-relaxed text-ink" },
@@ -68,7 +68,7 @@
         h("li", { className: "rounded-xl border border-line bg-surface p-4" },
           h("p", { className: "font-bold text-ink" }, "Emergency: 000"),
           h("p", { className: "text-muted" }, "If you or someone else is in immediate danger."))),
-      h("p", { className: "mt-6 leading-relaxed text-muted" }, "FIT-FIRST is a design prototype. It can't respond to anything you tell it."),
+      h("p", { className: "mt-6 leading-relaxed text-muted" }, "Thera-Fits is a design prototype. It can't respond to anything you tell it."),
       h("div", { className: "mt-10 flex flex-wrap gap-3" },
         h(Button, { variant: "secondary", onClick: onBack }, h(IconBack, { className: "h-4 w-4" }), "Back"),
         h(Button, { onClick: onNext }, "Continue")));

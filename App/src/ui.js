@@ -88,8 +88,8 @@ window.FF = window.FF || {};
   function Header({ onHome }) {
     return h("header", { className: "sticky top-0 z-30 border-b border-line bg-paper/90 backdrop-blur" },
       h("div", { className: "mx-auto flex max-w-5xl items-center justify-between gap-4 px-4 py-3 sm:px-8" },
-        h("button", { type: "button", onClick: onHome, className: "flex items-center gap-2.5 rounded-md py-1", "aria-label": "FIT-FIRST home" },
-          h(Logo), h("span", { className: "font-display text-lg font-semibold tracking-tight text-ink" }, "FIT-FIRST")),
+        h("button", { type: "button", onClick: onHome, className: "flex items-center gap-2.5 rounded-md py-1", "aria-label": "Thera-Fits home" },
+          h(Logo), h("span", { className: "font-display text-lg font-semibold tracking-tight text-ink" }, "Thera-Fits")),
         h("span", { className: "rounded-full border border-line-strong px-3 py-1 text-sm text-muted" }, "Prototype for testing")));
   }
 
@@ -97,7 +97,7 @@ window.FF = window.FF || {};
     return h("footer", { className: "border-t border-line" },
       h("div", { className: "mx-auto max-w-5xl px-4 py-8 text-sm leading-relaxed text-muted sm:px-8" },
         h("p", { className: "max-w-3xl" },
-          "FIT-FIRST is a university design prototype. It doesn't provide therapy, diagnosis or medical advice, and all therapist profiles are fictional, with free stock photos. If you need support now, call Lifeline on ",
+          "Thera-Fits is a university design prototype. It doesn't provide therapy, diagnosis or medical advice, and all therapist profiles are fictional, with free stock photos. If you need support now, call Lifeline on ",
           h("span", { className: "font-bold text-ink" }, "13 11 14"), ", or ",
           h("span", { className: "font-bold text-ink" }, "000"), " in an emergency.")));
   }

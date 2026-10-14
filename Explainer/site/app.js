@@ -2,7 +2,7 @@
 /*
   The explainer page. It never scores anything: it calls FF.rankers.run() and draws what comes back,
   so a ranking system added in matching/ shows up here without changes to this file.
-  Left: the six questions. Right: behind the scenes, which a person using FIT-FIRST wouldn't see.
+  Left: the six questions. Right: behind the scenes, which a person using Thera-Fits wouldn't see.
   URL: ?patient=A–E loads a test patient, ?ranker=<id> picks a ranking system, ?open=<therapist id> opens a breakdown.
 */
 (function () {
@@ -365,7 +365,7 @@
         h("div", { className: "mx-auto w-full max-w-7xl px-4 pb-16 pt-8 sm:px-8 sm:pt-10" },
           h("h1", { className: "font-display text-[1.9rem] font-semibold leading-[1.1] tracking-[-0.025em] text-ink sm:text-[2.4rem]" }, "How matching decides"),
           h("p", { className: "mt-3 max-w-3xl text-lg leading-relaxed text-muted" },
-            "Answer six questions, or load a test patient. The right-hand side shows what a person using FIT-FIRST wouldn't see: every fictional therapist's points, and how each one was decided. Switch the ranking system to see how a different rule changes the shortlist."),
+            "Answer six questions, or load a test patient. The right-hand side shows what a person using Thera-Fits wouldn't see: every fictional therapist's points, and how each one was decided. Switch the ranking system to see how a different rule changes the shortlist."),
           h("p", { className: "sr-only", "aria-live": "polite" }, live),
           h("div", { className: "mt-8 grid grid-cols-1 gap-8 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] lg:items-start" },
             h(AnswersPane, { answers, setAnswers, patient, edited, load, clear, ranker }),

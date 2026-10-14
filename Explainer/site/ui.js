@@ -61,7 +61,7 @@ window.FF = window.FF || {};
     return h("header", { className: "sticky top-0 z-30 border-b border-line bg-paper/90 backdrop-blur" },
       h("div", { className: "mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-3 sm:px-8" },
         h("div", { className: "flex items-center gap-2.5" },
-          h(Logo), h("span", { className: "font-display text-lg font-semibold tracking-tight text-ink" }, "FIT-FIRST"),
+          h(Logo), h("span", { className: "font-display text-lg font-semibold tracking-tight text-ink" }, "Thera-Fits"),
           h("span", { className: "hidden rounded-full border border-line-strong px-3 py-1 text-sm text-muted sm:inline" }, "Matching explainer")),
         h("a", { href: "../App/index.html", className: "rounded-md px-1 py-1 text-[0.95rem] font-bold text-accent underline-offset-4 hover:underline" }, "Basic prototype")));
   }
@@ -70,9 +70,9 @@ window.FF = window.FF || {};
     return h("footer", { className: "border-t border-line" },
       h("div", { className: "mx-auto max-w-7xl space-y-2 px-4 py-8 text-sm leading-relaxed text-muted sm:px-8" },
         h("p", { className: "max-w-3xl" },
-          "A behind-the-scenes view for the project team. People using FIT-FIRST would only see their shortlist: they wouldn't see scores, and therapists are never ranked publicly."),
+          "A behind-the-scenes view for the project team. People using Thera-Fits would only see their shortlist: they wouldn't see scores, and therapists are never ranked publicly."),
         h("p", { className: "max-w-3xl" },
-          "FIT-FIRST is a university design prototype. It doesn't provide therapy, diagnosis or medical advice, and all therapist profiles are fictional. If you need support now, call Lifeline on ",
+          "Thera-Fits is a university design prototype. It doesn't provide therapy, diagnosis or medical advice, and all therapist profiles are fictional. If you need support now, call Lifeline on ",
           h("span", { className: "font-bold text-ink" }, "13 11 14"), ", or ",
           h("span", { className: "font-bold text-ink" }, "000"), " in an emergency.")));
   }
