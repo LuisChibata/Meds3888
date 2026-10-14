@@ -9,13 +9,21 @@ USYD design project. A website prototype that helps 18–24-year-olds who have *
 - **Keep it simple.** Few features. Each one must trace back to interview or Google Form evidence. Website, not native app.
 - **Matching follows the research doc** (`compass_artifact_…_text_markdown.md`, section "Recommendations"): risk screen first and it overrides matching; weight therapists' self-reported specialties low (they oversell); shortlist of 2–3; patient preferences are the last layer; never publicly rank therapists; any outcome data is synthetic and labelled as such.
 
+## Design decisions (Luis; carry these forward)
+- **Matching is decoupled from the website** (14/10). A page never scores anything: it passes answers and therapists to a ranking system and draws what comes back. Ranking systems are swappable, one file each, registered with `FF.rankers.register()` and following the contract at the top of `Explainer/matching/rankers.js` (filters with reasons, an optional group, weighted parts with plain-language "said" / "has"). Ranking systems don't sort: `FF.rankers.run()` does, the same way for all of them, so the explanation on screen is always true. New matching work follows this, including any port of `App/`, which predates it and still calls `FF.match` directly.
+
 ## Layout
-- `App/`: **the real code lives here.** No build step; classic `<script>`s sharing a global `FF` namespace (ES modules don't load from file://), so load order in `index.html` matters.
+- `App/`: **the basic prototype** (MVP foundation, the full 15-question flow). No build step; classic `<script>`s sharing a global `FF` namespace (ES modules don't load from file://), so load order in `index.html` matters.
   - `src/data/questions.js`: Q1–Q10, Q16–Q20 with option ids. Wording copied from the workflow doc; change it there first.
   - `src/data/therapists.js`: the 8 fictional therapists. Fields must use the option ids from questions.js (tests.html checks this).
   - `src/data/test-patients.js`: patients A–E with expectations.
   - `src/matching.js`: pure engine, `FF.match(answers, therapists)` → `{ status, shortlist, closest, ranked }`. Weights and the sourced evidence pairings are constants at the top.
   - `src/ui.js` (building blocks from the prototype), `src/app.js` (flow: landing → safety → one question per screen → results).
+- `Explainer/`: **the matching explainer** (14/10). Six questions (Q6, Q16–Q20) on one page. A behind-the-scenes panel shows every therapist's filters, group and points, a per-therapist breakdown, and a switch between ranking systems. For the team and supervisor, not end users: it ranks therapists openly. Same stack and colour tokens as `App/`; its own data, so changing one prototype doesn't move the other.
+  - `data/`: the six questions (canonical wording, trimmed options), the same 8 therapists cut down to the fields used, test patients A–E (E is new). `open` in a test patient = an expectation the group hasn't settled; tests report it as OPEN, not FAIL.
+  - `matching/`: `rankers.js` (contract, registry, `run`, `check`), `criteria.js` (shared measurements, no weights), then one file per ranking system: `research.js` (the working spec), `checklist.js` (naive baseline: equal weights, believes self-listed areas), `access.js` (cost and waiting time first). Knows nothing about the page.
+  - `site/`: `ui.js`, `app.js`. Never scores. Bar colours per kind of points are `--kind-*` in `index.html` (a validated colour-blind-safe palette, in that order; a new kind needs a colour).
+  - Adding a ranking system: a new file in `matching/`, plus a `<script>` after `criteria.js` in both `index.html` and `tests.html`. The first one registered is the default.
 - `documents/`: reference material only, not the place for app code.
   - `FIT-FIRST prototype (1).html`: the existing clickable prototype (the starting point for `App/`).
   - `MEDS3888 - G13 (LIVED EXPERIENCE) workflow.md`: questionnaire Q1–Q20 written (Part A base profile, Part B needs / coping / therapist fit; the Section 3 heading says Q21–Q25 but they don't exist). Canonical wording. The therapist-side questions section is empty.
@@ -27,13 +35,14 @@ USYD design project. A website prototype that helps 18–24-year-olds who have *
 Paths contain spaces: quote them in shell.
 
 ## Running and checking
-No build or package.json, and Node isn't installed here. Open `App/index.html` (or the prototype) in a browser; needs internet for Tailwind 3.4.16, React 18.3.1 and Google Fonts from CDNs. `App/index.html?patient=A` (A–E) jumps straight to a test patient's results.
+No build or package.json. Node is installed on the Linux machine, not on the Windows one; nothing needs it. Open `App/index.html`, `Explainer/index.html` (or the prototype) in a browser; needs internet for Tailwind 3.4.16, React 18.3.1 and Google Fonts from CDNs. `App/index.html?patient=A` (A–E) jumps straight to a test patient's results. `Explainer/index.html?patient=A&ranker=access&open=priya` loads a patient, picks a ranking system and opens a breakdown.
 - **Matching tests:** open `App/tests.html`. Headless from PowerShell (the page title is `PASS n/n` or `FAIL n/n`):
   `& "${env:ProgramFiles(x86)}\Microsoft\Edge\Application\msedge.exe" --headless=new --disable-gpu --user-data-dir="<scratchpad>\edge" --virtual-time-budget=3000 --dump-dom "file:///D:/Luis/uni/meds3888/App/tests.html"`
   On the Linux machine (Chromium), from the repo root; prints just the title:
   `chromium --headless=new --disable-gpu --user-data-dir="<scratchpad>/chr" --virtual-time-budget=5000 --dump-dom "file://$PWD/App/tests.html" 2>/dev/null | grep -o '<title>[^<]*'`
   Run after any change to weights, therapists or questions. Don't edit a test patient's expectation to make it pass; that's a group decision.
-- Verify UI changes in a real browser: walk landing → results, in light and dark mode, and by keyboard only. Headless Edge `--screenshot` works for a quick look.
+- **Explainer tests:** `Explainer/tests.html`, same commands with that path. Title is `PASS n/n (k open)`. Loads only `data/` and `matching/`, no page code. Checks every ranking system against the contract, the research-guided one against the test patients, and that each system's description stays true.
+- Verify UI changes in a real browser: walk landing → results, in light and dark mode, and by keyboard only. Headless Edge `--screenshot` works for a quick look, but `--virtual-time-budget` can freeze CSS transitions mid-way (selected buttons look unselected); judge colours in a real browser.
 
 ## Prototype internals (`documents/FIT-FIRST prototype (1).html`)
 - One self-contained file with an inline `<script>`. No JSX or Babel: components are `React.createElement` calls. The prototype gets shared with the supervisor and teammates, so keep `App/` openable by double-click too unless we agree to add a build step.
@@ -45,6 +54,7 @@ No build or package.json, and Node isn't installed here. Open `App/index.html` (
 ## Where we are (update when this changes)
 - **Built (prototype, `documents/`):** prior-therapy question → pick priorities → rank top 3 → fit profile → compare 3 fictional therapists → detail → feedback.
 - **Built (`App/`, 14/10):** MVP foundation. Landing → safety screen (placeholder wording) → Q1–Q10, Q16–Q20 with must-have toggles → shortlist of 3 with per-item reasons, trade-offs and honest closest fits. 8 therapists, matching engine, tests (49/50: patient A shows Priya at #3, an open question for the group).
+- **Built (`Explainer/`, 14/10):** six questions → live behind-the-scenes view: three ranking systems (research-guided, simple checklist, access first), step counts, every therapist's stacked points bar with moves after each change, per-therapist breakdown table, shortlist comparison across systems. Tests 42/42, 1 open (the same patient A / Priya question).
 - **Not built in `App/`:** therapist detail page, feedback screen, top-3-priorities step.
 - **Deferred:** self-management (only "if we have extra time"); therapist-side account and questions.
 - **Open:** whether the priorities flow stays or the questionnaire replaces it (leaning: questionnaire → top 3 priorities → shortlist of 3); app name; deadline and what is assessed (not in the notes); Q3/Q7 and the "essential" toggle (see the proposal's open questions).

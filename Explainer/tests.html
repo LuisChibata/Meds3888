@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en-AU">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>FIT-FIRST explainer tests</title>
+<style>
+  :root { --paper: #f6f3ed; --ink: #172234; --muted: #505b6c; --line: #dfd9ce; --pass: #1c5660; --fail: #a12d2d; --open: #805818; color-scheme: light; }
+  @media (prefers-color-scheme: dark) {
+    :root { --paper: #10151c; --ink: #ece8e0; --muted: #a3acba; --line: #2c3643; --pass: #7cbec2; --fail: #f08a8a; --open: #e2b670; color-scheme: dark; }
+  }
+  body { margin: 0; padding: 24px 16px 48px; background: var(--paper); color: var(--ink); font: 15px/1.5 ui-sans-serif, system-ui, "Segoe UI", sans-serif; }
+  main { max-width: 960px; margin: 0 auto; }
+  h1 { font-size: 1.6rem; margin: 0 0 4px; }
+  h2 { font-size: 1.1rem; margin: 32px 0 6px; }
+  p { color: var(--muted); margin: 4px 0; }
+  .pass { color: var(--pass); font-weight: 700; }
+  .fail { color: var(--fail); font-weight: 700; }
+  .open { color: var(--open); font-weight: 700; }
+  ul { margin: 6px 0; padding-left: 20px; }
+  table { border-collapse: collapse; width: 100%; margin-top: 8px; font-size: 14px; }
+  th, td { text-align: left; padding: 4px 8px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  .wrap { overflow-x: auto; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Explainer tests</h1>
+  <p>Runs every ranking system in <code>matching/</code> against the data and the fictional test patients. It loads no website code: matching works on its own.
+    OPEN marks an expectation the group hasn't settled; it doesn't count as a failure.</p>
+  <p id="summary"></p>
+  <div id="out"></div>
+</main>
+<script src="data/questions.js"></script>
+<script src="data/therapists.js"></script>
+<script src="data/test-patients.js"></script>
+<script src="matching/rankers.js"></script>
+<script src="matching/criteria.js"></script>
+<script src="matching/research.js"></script>
+<script src="matching/checklist.js"></script>
+<script src="matching/access.js"></script>
+<script>
+"use strict";
+(function () {
+  const out = document.getElementById("out");
+  const results = [];
+  const check = (group, name, ok, detail) => results.push({ group, name, state: ok ? "pass" : "fail", detail: detail || "" });
+  const open = (group, name, ok, detail) => results.push({ group, name, state: ok ? "pass" : "open", detail: detail || "" });
+  const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+  const T = FF.THERAPISTS;
+  const R = FF.rankers;
+
+  /* Data: every field uses ids the questions know, so scoring can't silently miss. */
+  const ids = (qid) => FF.question(qid).options.map(([id]) => id);
+  const MODALITIES = ["cbt", "act", "dbt", "ipt", "psychodynamic", "person_centred"];
+  const outside = (arr, allowed) => arr.filter((x) => allowed.indexOf(x) === -1);
+  check("Data", "8 therapists, unique ids", T.length === 8 && new Set(T.map((t) => t.id)).size === 8);
+  T.forEach((t) => {
+    const bad = []
+      .concat(outside(t.qualities, ids("q16")), outside(t.approach, ids("q17")), outside(t.focus_areas, ids("q6")),
+        outside(t.formats, ["in_person", "video", "phone"]), outside(t.modalities, MODALITIES))
+      .concat(ids("q18").filter((k) => ["strong", "some", "none"].indexOf(t.context[k]) === -1).map((k) => "context." + k))
+      .concat([1, 2, 3].indexOf(t.fee_band) === -1 ? ["fee_band"] : [])
+      .concat(["business", "weekends", "evenings_weekends"].indexOf(t.hours) === -1 ? ["hours"] : [])
+      .concat(typeof t.wait_days === "number" ? [] : ["wait_days"]);
+    check("Data", `${t.name}: all fields valid`, bad.length === 0, bad.length ? "Unknown: " + bad.join(", ") : "");
+  });
+  FF.TEST_PATIENTS.forEach((p) => {
+    const bad = [];
+    Object.keys(p.answers).forEach((k) => {
+      if (k === "must") return bad.push(...outside(Object.keys(p.answers.must), ids("q18")).map((x) => "must." + x));
+      if (!FF.question(k)) return bad.push(k);
+      bad.push(...outside([].concat(p.answers[k]), ids(k)).map((x) => `${k}.${x}`));
+    });
+    check("Data", `Patient ${p.id}: answers use known option ids`, bad.length === 0, bad.length ? "Unknown: " + bad.join(", ") : "");
+  });
+
+  /* Contract: every ranking system, on every patient plus edge cases, returns what the page relies on. */
+  const everything = {};
+  FF.QUESTIONS.forEach((q) => { everything[q.id] = q.type === "single" ? ids(q.id)[0] : ids(q.id).slice(0, q.max || 99); });
+  everything.must = { cultural: true };
+  const cases = FF.TEST_PATIENTS.map((p) => [`patient ${p.id}`, p.answers]).concat([["no answers", {}], ["every question answered", everything]]);
+  check("Contract", "At least one ranking system, unique ids", R.list().length > 0 && new Set(R.list().map((r) => r.id)).size === R.list().length);
+  R.list().forEach((rk) => {
+    const problems = [];
+    cases.forEach(([name, answers]) => {
+      try {
+        R.check(rk, rk.rank(answers, T), T).forEach((x) => problems.push(`${name}: ${x}`));
+        const tr = R.run(rk.id, answers, T);
+        if (tr.results.map((r) => r.position).join() !== T.map((_, i) => i + 1).join()) problems.push(`${name}: positions aren't 1..${T.length}`);
+        if (tr.shortlist.length > R.SHORTLIST_SIZE || tr.shortlist.some((r) => r.excluded.length)) problems.push(`${name}: bad shortlist`);
+      } catch (e) { problems.push(`${name}: threw ${e.message}`); }
+    });
+    check("Contract", `${rk.name}: valid on ${cases.length} cases`, problems.length === 0, problems.slice(0, 3).join(" · "));
+  });
+
+  /* The group's expectations, for the research-guided system (proposal section 5). */
+  const details = [];
+  FF.TEST_PATIENTS.forEach((p) => {
+    const g = `Patient ${p.id}`;
+    const tr = R.run("research", p.answers, T);
+    const top = tr.shortlist.map((r) => r.id);
+    const ex = p.expect;
+    const shortTxt = "Shortlist: " + (top.join(", ") || "none");
+    (ex.shortlist || []).forEach((id) => check(g, `${id} shortlisted`, top.indexOf(id) !== -1, shortTxt));
+    if (ex.shortlistAnyOf) check(g, `one of ${ex.shortlistAnyOf.join(" / ")} shortlisted`, ex.shortlistAnyOf.some((id) => top.indexOf(id) !== -1), shortTxt);
+    (ex.notShortlisted || []).forEach((id) => check(g, `${id} not shortlisted`, top.indexOf(id) === -1, shortTxt));
+    if (ex.status) check(g, `status is "${ex.status}"`, tr.status === ex.status, `Got "${tr.status}"`);
+    (p.open || []).forEach((o) => (o.notShortlisted || []).forEach((id) =>
+      open(g, `${id} not shortlisted`, top.indexOf(id) === -1, `${shortTxt}. ${o.note}`)));
+    details.push({ p, runs: R.list().map((rk) => R.run(rk.id, p.answers, T)) });
+  });
+
+  /* Each system's description has to stay true, or the page would be explaining something false. */
+  const find = (tr, id) => tr.results.find((r) => r.id === id);
+  const areasFit = (rid, answers, tid) => (find(R.run(rid, answers, T), tid).parts.find((p) => p.kind === "areas") || {}).fit;
+  const A = FF.TEST_PATIENTS.find((p) => p.id === "A").answers;
+  const B = FF.TEST_PATIENTS.find((p) => p.id === "B").answers;
+  const benAreas = { q6: ["study", "work", "anxiety"] };
+  const rA = R.run("research", A, T);
+  check("Research-guided", "Trained in the sourced pairing ranks first (patient A: Wei and Layla are 1 and 2)",
+    rA.results.slice(0, 2).map((r) => r.id).sort().join() === "layla,wei", "Top 2: " + rA.results.slice(0, 2).map((r) => r.id).join(", "));
+  check("Research-guided", "A long list of areas counts less (Ben lists 9: each match counts 3/9)",
+    Math.abs(areasFit("research", benAreas, "ben") - 1 / 3) < 1e-9, "Fit: " + areasFit("research", benAreas, "ben"));
+  check("Simple checklist", "A long list of areas counts in full (Ben's fit is 1)", areasFit("checklist", benAreas, "ben") === 1, "Fit: " + areasFit("checklist", benAreas, "ben"));
+  check("Simple checklist", "No research group", R.run("checklist", A, T).results.every((r) => !r.group));
+  check("Simple checklist", "Every weight is 1", R.run("checklist", A, T).results.every((r) => r.parts.every((p) => p.weight === 1)));
+  const accB = find(R.run("access", B, T), "sam").parts.filter((p) => p.kind === "practical").length;
+  check("Access first", "Fees, waiting time and hours count even when Q20 is blank (patient B)", accB === 3, `${accB} practical parts`);
+  check("Access first", "Doesn't use the areas therapists list", R.run("access", A, T).results.every((r) => r.parts.every((p) => p.kind !== "areas")));
+  check("Access first", "Patient A: Priya not shortlisted (the other answer to the open question)", !find(R.run("access", A, T), "priya").shortlisted);
+
+  /* Render */
+  const failed = results.filter((x) => x.state === "fail");
+  const opened = results.filter((x) => x.state === "open");
+  const counted = results.length - opened.length;
+  const summary = document.getElementById("summary");
+  summary.className = failed.length ? "fail" : "pass";
+  summary.textContent = (failed.length ? `${failed.length} of ${counted} checks failed` : `All ${counted} checks passed`) + (opened.length ? `, ${opened.length} open` : "");
+  document.title = (failed.length ? "FAIL " : "PASS ") + (counted - failed.length) + "/" + counted + (opened.length ? ` (${opened.length} open)` : "");
+
+  let html = "";
+  [...new Set(results.map((x) => x.group))].forEach((group) => {
+    html += `<h2>${esc(group)}</h2><ul>`;
+    results.filter((x) => x.group === group).forEach((x) => {
+      const label = x.state.toUpperCase();
+      html += `<li><span class="${x.state}">${label}</span> ${esc(x.name)}${x.state !== "pass" && x.detail ? ` <span class="${x.state}">(${esc(x.detail)})</span>` : ""}</li>`;
+    });
+    html += "</ul>";
+    const d = details.find((x) => "Patient " + x.p.id === group);
+    if (d) {
+      html += `<p>${esc(d.p.label)}. Shortlist under each ranking system:</p><div class="wrap"><table><thead><tr><th>Ranking system</th><th>Status</th><th>Shortlist</th><th>Filtered out</th></tr></thead><tbody>`;
+      d.runs.forEach((tr) => {
+        const outIds = tr.results.filter((r) => r.excluded.length).map((r) => r.therapist.name);
+        html += `<tr><td>${esc(tr.ranker.name)}</td><td>${tr.status}</td><td>${esc(tr.shortlist.map((r) => `${r.therapist.name} (${Math.round(r.score * 100) / 100}/${r.max})`).join(", ") || "none")}</td><td>${esc(outIds.join(", ") || "none")}</td></tr>`;
+      });
+      html += "</tbody></table></div>";
+    }
+  });
+  out.innerHTML = html;
+})();
+</script>
+</body>
+</html>
