@@ -30,6 +30,8 @@ Paths contain spaces: quote them in shell.
 No build or package.json, and Node isn't installed here. Open `App/index.html` (or the prototype) in a browser; needs internet for Tailwind 3.4.16, React 18.3.1 and Google Fonts from CDNs. `App/index.html?patient=A` (A–E) jumps straight to a test patient's results.
 - **Matching tests:** open `App/tests.html`. Headless from PowerShell (the page title is `PASS n/n` or `FAIL n/n`):
   `& "${env:ProgramFiles(x86)}\Microsoft\Edge\Application\msedge.exe" --headless=new --disable-gpu --user-data-dir="<scratchpad>\edge" --virtual-time-budget=3000 --dump-dom "file:///D:/Luis/uni/meds3888/App/tests.html"`
+  On the Linux machine (Chromium), from the repo root; prints just the title:
+  `chromium --headless=new --disable-gpu --user-data-dir="<scratchpad>/chr" --virtual-time-budget=5000 --dump-dom "file://$PWD/App/tests.html" 2>/dev/null | grep -o '<title>[^<]*'`
   Run after any change to weights, therapists or questions. Don't edit a test patient's expectation to make it pass; that's a group decision.
 - Verify UI changes in a real browser: walk landing → results, in light and dark mode, and by keyboard only. Headless Edge `--screenshot` works for a quick look.
 
@@ -42,7 +44,7 @@ No build or package.json, and Node isn't installed here. Open `App/index.html` (
 
 ## Where we are (update when this changes)
 - **Built (prototype, `documents/`):** prior-therapy question → pick priorities → rank top 3 → fit profile → compare 3 fictional therapists → detail → feedback.
-- **Built (`App/`, 14/10):** MVP foundation. Landing → safety screen (placeholder wording) → Q1–Q10, Q16–Q20 with must-have toggles → shortlist of 3 with per-item reasons, trade-offs and honest closest fits. 8 therapists, matching engine, tests (44/45: patient A shows Priya at #3, an open question for the group).
+- **Built (`App/`, 14/10):** MVP foundation. Landing → safety screen (placeholder wording) → Q1–Q10, Q16–Q20 with must-have toggles → shortlist of 3 with per-item reasons, trade-offs and honest closest fits. 8 therapists, matching engine, tests (49/50: patient A shows Priya at #3, an open question for the group).
 - **Not built in `App/`:** therapist detail page, feedback screen, top-3-priorities step.
 - **Deferred:** self-management (only "if we have extra time"); therapist-side account and questions.
 - **Open:** whether the priorities flow stays or the questionnaire replaces it (leaning: questionnaire → top 3 priorities → shortlist of 3); app name; deadline and what is assessed (not in the notes); Q3/Q7 and the "essential" toggle (see the proposal's open questions).

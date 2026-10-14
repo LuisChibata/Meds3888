@@ -83,6 +83,9 @@
     if (ex.status) check(g, `status is "${ex.status}"`, r.status === ex.status, `Got "${r.status}"`);
     check(g, "Shows 3 options in total", shown.length === 3, "Shown: " + shown.join(", "));
     check(g, "Closest fits say what they miss", r.closest.every((x) => x.misses.length > 0));
+    // A therapist filtered out on format must not also be described as offering it.
+    const formatClash = r.ranked.filter((x) => x.misses.some((m) => m.startsWith("Doesn't offer")) && x.reasons.some((q) => q.key === "format" && q.score === 1));
+    check(g, "Session format line agrees with the filter", formatClash.length === 0, "Clash: " + formatClash.map((x) => x.therapist.id).join(", "));
     details.push({ p, r });
   });
 

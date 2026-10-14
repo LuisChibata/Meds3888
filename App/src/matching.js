@@ -223,7 +223,9 @@ window.FF = window.FF || {};
     // Q19 format
     const format = answers.q19;
     if (FORMAT[format]) {
-      add("format", "Session format", 0, 1, `Offers ${FORMAT[format]}.`);
+      // Closest fits can lack the format; the filter lists it as a miss, so don't claim it here.
+      const ok = has(t.formats, format);
+      add("format", "Session format", 0, ok ? 1 : 0, ok ? `Offers ${FORMAT[format]}.` : `Offers ${join(t.formats.map((f) => FORMAT[f]))} only.`);
     } else if (format === "combination") {
       const both = has(t.formats, "in_person") && has(t.formats, "video");
       const one = has(t.formats, "in_person") || has(t.formats, "video");
