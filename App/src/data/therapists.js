@@ -19,12 +19,15 @@
     context       "strong" | "some" | "none" for each Q18 context item and life stage
 
   No hand-written alignment per priority: matching.js computes it from these fields.
+
+  photo (not scored) is a free stock photo, path relative to index.html; sources in img/therapists/CREDITS.md.
+  Without one, the card falls back to the initials.
 */
 window.FF = window.FF || {};
 
 FF.THERAPISTS = [
   {
-    id: "maya", name: "Dr Maya Chen", initials: "MC",
+    id: "maya", name: "Dr Maya Chen", initials: "MC", photo: "img/therapists/maya.jpg",
     registration: "Clinical psychologist",
     gender: "woman", languages: ["english", "mandarin"], formats: ["in_person", "video"],
     fee_band: 2, wait_days: 14, hours: "business", location: "cbd", accepting: true,
@@ -37,7 +40,7 @@ FF.THERAPISTS = [
     tradeoff: "Less structured if you'd like a clear plan from the first session.",
   },
   {
-    id: "jordan", name: "Jordan Smith", initials: "JS",
+    id: "jordan", name: "Jordan Smith", initials: "JS", photo: "img/therapists/jordan.jpg",
     registration: "Psychologist",
     gender: "non_binary", languages: ["english"], formats: ["in_person"],
     fee_band: 1, wait_days: 5, hours: "evenings_weekends", location: "near_campus", accepting: true,
@@ -50,7 +53,7 @@ FF.THERAPISTS = [
     tradeoff: "In person only, and less focus on family or cultural context.",
   },
   {
-    id: "priya", name: "Priya Raman", initials: "PR",
+    id: "priya", name: "Priya Raman", initials: "PR", photo: "img/therapists/priya.jpg",
     registration: "Counselling psychologist",
     gender: "woman", languages: ["english", "hindi"], formats: ["video", "in_person"],
     fee_band: 3, wait_days: 21, hours: "business", location: "cbd", accepting: true,
@@ -63,7 +66,7 @@ FF.THERAPISTS = [
     tradeoff: "Highest cost and the longest wait.",
   },
   {
-    id: "sam", name: "Sam Okafor", initials: "SO",
+    id: "sam", name: "Sam Okafor", initials: "SO", photo: "img/therapists/sam.jpg",
     registration: "Mental health social worker",
     gender: "man", languages: ["english"], formats: ["video", "phone"],
     fee_band: 1, wait_days: 7, hours: "evenings_weekends", location: "telehealth", accepting: true,
@@ -76,7 +79,7 @@ FF.THERAPISTS = [
     tradeoff: "No in-person sessions, and less goal-structured.",
   },
   {
-    id: "layla", name: "Dr Layla Haddad", initials: "LH",
+    id: "layla", name: "Dr Layla Haddad", initials: "LH", photo: "img/therapists/layla.jpg",
     registration: "Clinical psychologist",
     gender: "woman", languages: ["english", "arabic"], formats: ["in_person", "video"],
     fee_band: 2, wait_days: 14, hours: "business", location: "cbd", accepting: true,
@@ -89,7 +92,7 @@ FF.THERAPISTS = [
     tradeoff: "Longer wait, and no evening appointments.",
   },
   {
-    id: "wei", name: "Wei Santoso", initials: "WS",
+    id: "wei", name: "Wei Santoso", initials: "WS", photo: "img/therapists/wei.jpg",
     registration: "Psychologist",
     gender: "man", languages: ["english", "indonesian"], formats: ["video"],
     fee_band: 2, wait_days: 4, hours: "evenings_weekends", location: "telehealth", accepting: true,
@@ -102,7 +105,7 @@ FF.THERAPISTS = [
     tradeoff: "Video only, and less room for open-ended reflection.",
   },
   {
-    id: "riley", name: "Riley Park", initials: "RP",
+    id: "riley", name: "Riley Park", initials: "RP", photo: "img/therapists/riley.jpg",
     registration: "Counselling psychologist",
     gender: "non_binary", languages: ["english"], formats: ["in_person", "video"],
     fee_band: 2, wait_days: 10, hours: "weekends", location: "near_campus", accepting: true,
@@ -117,7 +120,7 @@ FF.THERAPISTS = [
   {
     // Deliberate test case: lists every focus area but has one trained modality.
     // Checks that self-reported specialties don't push a therapist to the top.
-    id: "ben", name: "Dr Ben Whitfield", initials: "BW",
+    id: "ben", name: "Dr Ben Whitfield", initials: "BW", photo: "img/therapists/ben.jpg",
     registration: "Clinical psychologist",
     gender: "man", languages: ["english"], formats: ["in_person"],
     fee_band: 3, wait_days: 7, hours: "business", location: "cbd", accepting: true,
