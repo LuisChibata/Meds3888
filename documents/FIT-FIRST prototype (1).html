@@ -1,0 +1,1136 @@
+<!DOCTYPE html>
+<html lang="en-AU">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>FIT-FIRST prototype</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,600&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --paper: 246 243 237;
+    --surface: 255 255 255;
+    --sunken: 239 235 227;
+    --ink: 23 34 52;
+    --muted: 80 91 108;
+    --line: 223 217 206;
+    --line-strong: 184 176 162;
+    --accent: 28 86 96;
+    --accent-ink: 255 255 255;
+    --accent-soft: 225 236 235;
+    --ochre: 128 88 24;
+    --ochre-soft: 246 236 214;
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --paper: 16 21 28;
+      --surface: 24 31 40;
+      --sunken: 20 26 34;
+      --ink: 236 232 224;
+      --muted: 163 172 186;
+      --line: 44 54 67;
+      --line-strong: 82 94 110;
+      --accent: 124 190 194;
+      --accent-ink: 10 28 32;
+      --accent-soft: 28 50 54;
+      --ochre: 226 182 112;
+      --ochre-soft: 50 41 26;
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --paper: 16 21 28;
+    --surface: 24 31 40;
+    --sunken: 20 26 34;
+    --ink: 236 232 224;
+    --muted: 163 172 186;
+    --line: 44 54 67;
+    --line-strong: 82 94 110;
+    --accent: 124 190 194;
+    --accent-ink: 10 28 32;
+    --accent-soft: 28 50 54;
+    --ochre: 226 182 112;
+    --ochre-soft: 50 41 26;
+    color-scheme: dark;
+  }
+  :root {
+    box-sizing: border-box;
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  html { scroll-padding-top: calc(env(safe-area-inset-top, 0px) + 72px); }
+  body {
+    margin: 0;
+    background: rgb(var(--paper));
+    color: rgb(var(--ink));
+    font-family: "Atkinson Hyperlegible", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    font-size: 17px;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+  img, svg { max-width: 100%; }
+  :focus-visible { outline: 2.5px solid rgb(var(--accent)); outline-offset: 3px; }
+  .slot-in { animation: slotIn 300ms cubic-bezier(.2,.8,.2,1); }
+  @keyframes slotIn {
+    from { transform: translateY(4px) scale(.97); opacity: .3; }
+    to { transform: none; opacity: 1; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; scroll-behavior: auto !important; }
+  }
+  #boot { display: grid; place-items: center; min-height: 60vh; color: rgb(var(--muted)); font-size: 15px; }
+</style>
+<script src="https://cdn.tailwindcss.com/3.4.16"></script>
+<script>
+  const twVar = (name) => `rgb(var(--${name}) / <alpha-value>)`;
+  tailwind.config = {
+    theme: {
+      extend: {
+        colors: {
+          paper: twVar("paper"), surface: twVar("surface"), sunken: twVar("sunken"), ink: twVar("ink"), muted: twVar("muted"),
+          line: twVar("line"), "line-strong": twVar("line-strong"),
+          accent: twVar("accent"), "accent-ink": twVar("accent-ink"), "accent-soft": twVar("accent-soft"),
+          ochre: twVar("ochre"), "ochre-soft": twVar("ochre-soft"),
+        },
+        fontFamily: {
+          display: ['"Bricolage Grotesque"', "ui-sans-serif", "system-ui", "-apple-system", "Segoe UI", "sans-serif"],
+          sans: ['"Atkinson Hyperlegible"', "ui-sans-serif", "system-ui", "-apple-system", "Segoe UI", "Roboto", "sans-serif"],
+        },
+      },
+    },
+  };
+</script>
+<script src="https://cdn.jsdelivr.net/npm/react@18.3.1/umd/react.production.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/react-dom@18.3.1/umd/react-dom.production.min.js"></script>
+</head>
+<body>
+<div id="root"><div id="boot">Loading FIT-FIRST…</div></div>
+<script>
+"use strict";
+const { useState, useEffect, useRef } = React;
+/*
+  FIT-FIRST — clickable MVP prototype (React + Tailwind CSS)
+  University design project. All therapist data is fictional. No backend, no data leaves the page.
+
+  Tailwind theme (colours map to CSS variables so light/dark both work):
+    colors: paper, surface, sunken, ink, muted, line, line-strong, accent, accent-ink, accent-soft, ochre, ochre-soft
+      e.g. paper: "rgb(var(--paper) / <alpha-value>)"
+    fontFamily: display -> "Bricolage Grotesque", sans -> "Atkinson Hyperlegible"
+*/
+/* ------------------------------------------------------------------ */
+/* Mock data                                                           */
+/* ------------------------------------------------------------------ */
+const PRIORITIES = [
+    { id: "asks", text: "I want someone who asks questions before giving advice", short: "Asks before giving advice" },
+    { id: "practical", text: "I want practical strategies", short: "Practical strategies" },
+    { id: "reflect", text: "I want space to reflect deeply", short: "Space to reflect deeply" },
+    { id: "family", text: "Understanding my family context matters", short: "Understands my family context" },
+    { id: "culture", text: "Understanding my cultural background matters", short: "Understands my cultural background", optional: true },
+    { id: "faith", text: "I want someone comfortable discussing faith if it becomes relevant", short: "Comfortable discussing faith", optional: true },
+    { id: "direct", text: "I prefer clear and direct communication", short: "Clear, direct communication" },
+    { id: "gentle", text: "I prefer a patient and gentle communication style", short: "Patient, gentle communication" },
+    { id: "student", text: "I want someone who understands student life", short: "Understands student life" },
+    { id: "cost", text: "Cost matters to me", short: "Cost" },
+    { id: "expect", text: "I want to know what to expect before the first session", short: "Knowing what to expect" },
+    { id: "personal", text: "I want support that goes beyond generic advice", short: "Support beyond generic advice" },
+];
+const PRIOR_CHANGES = [
+    { id: "generic", label: "Less generic advice", related: ["personal"] },
+    { id: "connection", label: "Better personal connection", related: ["gentle", "asks"] },
+    { id: "background", label: "Better understanding of my background", related: ["family", "culture"] },
+    { id: "goals", label: "Clearer goals", related: ["direct", "practical"] },
+    { id: "practical", label: "More practical strategies", related: ["practical"] },
+    { id: "deeper", label: "Deeper conversations", related: ["reflect"] },
+    { id: "cost", label: "Lower cost", related: ["cost"] },
+    { id: "scheduling", label: "Easier scheduling", related: [] },
+    { id: "other", label: "Other", related: [] },
+];
+const HELPED_OPTIONS = [
+    "Communication style",
+    "Background and context",
+    "Therapy approach",
+    "Cost",
+    "Availability",
+    "Knowing what to expect",
+    "Other",
+];
+const THERAPISTS = [
+    {
+        id: "maya",
+        name: "Dr Maya Chen",
+        initials: "MC",
+        role: "Clinical psychologist",
+        communication: "Reflective and conversational",
+        approach: "Explores your context before suggesting strategies",
+        experience: ["Young adults", "Family relationships", "Anxiety", "Life transitions"],
+        cultural: "Experience working across diverse backgrounds",
+        faith: "Comfortable discussing when relevant",
+        format: "In person and telehealth",
+        cost: "$$",
+        costLabel: "Mid-range",
+        availability: "About 2 weeks",
+        session: "50 minutes",
+        tradeoff: "Less structured if you'd like a clear plan from the first session.",
+        about: "Maya works mostly with young adults navigating relationships, family expectations and anxiety. She's interested in how someone's history and circumstances shape what they're going through right now.",
+        howIWork: "I usually spend the first few sessions getting to know you and what's going on, before we decide together whether specific strategies would help. Sessions tend to feel like a conversation rather than a program.",
+        style: "I ask a lot of questions and leave room for you to think out loud. I won't rush to advice.",
+        firstSession: [
+            "We talk about what brought you here and what you'd like to be different.",
+            "I ask about your background, relationships and day-to-day life. You share only what you're comfortable with.",
+            "We finish by agreeing whether to keep working together, with no pressure either way.",
+        ],
+        contextual: "Has worked with clients from a wide range of cultural backgrounds. Comfortable discussing faith or religion if you bring it up, and happy to leave it aside if you don't.",
+        align: {
+            asks: ["strong", "Asks about your context before suggesting anything."],
+            practical: ["partial", "Uses strategies, but introduces them later and less formally."],
+            reflect: ["strong", "Leaves plenty of room to reflect and talk things through."],
+            family: ["strong", "Works often with family relationships."],
+            culture: ["partial", "Broad experience across backgrounds. Worth asking about yours."],
+            faith: ["partial", "Comfortable discussing faith when you raise it."],
+            direct: ["limited", "Conversational rather than directive."],
+            gentle: ["strong", "Patient, unhurried style."],
+            student: ["partial", "Works with young adults, though not student-specific."],
+            cost: ["partial", "Mid-range example cost ($$)."],
+            expect: ["partial", "Explains the first session if you ask beforehand."],
+            personal: ["strong", "Tailors sessions closely to your situation."],
+        },
+    },
+    {
+        id: "jordan",
+        name: "Jordan Smith",
+        initials: "JS",
+        role: "Psychologist",
+        communication: "Direct and structured",
+        approach: "Practical strategies and goal setting",
+        experience: ["University stress", "Anxiety", "Behavioural strategies", "Study and sleep routines"],
+        cultural: "General experience",
+        faith: "Not listed",
+        format: "In person only",
+        cost: "$",
+        costLabel: "Lower",
+        availability: "About 5 days",
+        session: "50 minutes",
+        tradeoff: "Less focus on family or cultural context, and in person only.",
+        about: "Jordan works with university students on stress, anxiety and building routines that hold up during busy periods. Sessions are goal-focused and structured.",
+        howIWork: "We set one or two clear goals early on, and each session includes a practical strategy to try before next time. I check in on progress regularly so you can see what's working.",
+        style: "Clear and direct. I'll tell you what I'm suggesting and why, and I'll ask you to tell me if something isn't working.",
+        firstSession: [
+            "A short checklist about what's going on day to day. No diagnosis needed.",
+            "We agree on one or two goals for the next few weeks.",
+            "You leave with a first strategy to try.",
+        ],
+        contextual: "General experience with young adults from a range of backgrounds. Family and cultural context aren't a main focus unless you raise them.",
+        align: {
+            asks: ["partial", "Asks focused questions, then moves to strategies fairly quickly."],
+            practical: ["strong", "Every session includes a practical strategy."],
+            reflect: ["limited", "Less time for open-ended reflection."],
+            family: ["limited", "Family context isn't a main focus."],
+            culture: ["limited", "General experience; less focus on cultural context."],
+            faith: ["limited", "Not listed as an area of experience. You could ask."],
+            direct: ["strong", "Clear, direct and structured."],
+            gentle: ["partial", "Friendly, but brisk and goal-focused."],
+            student: ["strong", "Specialises in university stress."],
+            cost: ["strong", "Lowest example cost ($)."],
+            expect: ["strong", "Shares a clear outline of the first session upfront."],
+            personal: ["partial", "Goals are personal, within a structured program."],
+        },
+    },
+    {
+        id: "priya",
+        name: "Priya Raman",
+        initials: "PR",
+        role: "Counselling psychologist",
+        communication: "Balanced and collaborative",
+        approach: "Reflection combined with practical strategies",
+        experience: ["Young adults", "Identity", "Family relationships", "Balancing expectations"],
+        cultural: "Strong experience across diverse backgrounds",
+        faith: "Comfortable incorporating values when requested",
+        format: "Telehealth and in person",
+        cost: "$$$",
+        costLabel: "Higher",
+        availability: "About 3 weeks",
+        session: "50 minutes",
+        tradeoff: "Highest example cost and the longest wait.",
+        about: "Priya works with young adults on identity, family relationships and the pressure of balancing different expectations. Her approach blends reflection with practical tools.",
+        howIWork: "I like to understand the bigger picture first, then we work out together which practical tools might help. If your values or faith matter to you, we can make room for them.",
+        style: "Collaborative. I check in about what's working for you and adjust the balance between talking and doing.",
+        firstSession: [
+            "We talk about what you're hoping for, and any past experiences of support.",
+            "I ask what you'd want me to understand about your background, if anything.",
+            "We sketch a loose plan that mixes reflection with practical steps.",
+        ],
+        contextual: "Strong experience working with people from diverse cultural backgrounds. Comfortable incorporating values or faith into sessions when you ask for it.",
+        align: {
+            asks: ["strong", "Starts by understanding the bigger picture."],
+            practical: ["partial", "Blends practical tools with reflection."],
+            reflect: ["partial", "Makes space for reflection alongside practical steps."],
+            family: ["strong", "Experienced with family relationships and expectations."],
+            culture: ["strong", "Strong experience across diverse backgrounds."],
+            faith: ["strong", "Will incorporate values or faith when you ask."],
+            direct: ["partial", "Collaborative; direct when you want it."],
+            gentle: ["partial", "Warm, steady pace that adjusts to you."],
+            student: ["partial", "Works with young adults; some student experience."],
+            cost: ["limited", "Highest example cost ($$$)."],
+            expect: ["partial", "Talks through the first session in a short intro call."],
+            personal: ["strong", "Builds the approach around your goals and context."],
+        },
+    },
+];
+const LEVELS = {
+    strong: { label: "Strong alignment" },
+    partial: { label: "Partial alignment" },
+    limited: { label: "Less aligned" },
+    unknown: { label: "Not covered" },
+};
+const STAGES = ["Discover", "Compare", "Decide"];
+const STEP_STAGE = {
+    intro: 0, prior: 0, select: 0, rank: 0, profile: 0,
+    compare: 1, detail: 1,
+    feedback: 2, done: 2,
+};
+const FIT_STEPS = ["Your experience", "Choose", "Top 3", "Profile"];
+function alignmentFor(therapist, pid) {
+    if (pid === "custom") {
+        return { level: "unknown", note: "The demo profiles don't cover this. It's worth asking about in an intro call." };
+    }
+    const [level, note] = therapist.align[pid];
+    return { level, note };
+}
+/* ------------------------------------------------------------------ */
+/* Small building blocks                                               */
+/* ------------------------------------------------------------------ */
+const Svg = ({ children, className = "h-5 w-5", strokeWidth = 2 }) => (React.createElement("svg", { viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: strokeWidth, strokeLinecap: "round", strokeLinejoin: "round", "aria-hidden": "true", className: className }, children));
+const IconCheck = (p) => React.createElement(Svg, { ...p },
+    React.createElement("path", { d: "M5 12.5l4.5 4.5L19 7.5" }));
+const IconX = (p) => React.createElement(Svg, { ...p },
+    React.createElement("path", { d: "M6 6l12 12M18 6L6 18" }));
+const IconUp = (p) => React.createElement(Svg, { ...p },
+    React.createElement("path", { d: "M12 19V5M6 11l6-6 6 6" }));
+const IconBack = (p) => React.createElement(Svg, { ...p },
+    React.createElement("path", { d: "M15 6l-6 6 6 6" }));
+const IconPlus = (p) => React.createElement(Svg, { ...p },
+    React.createElement("path", { d: "M12 5v14M5 12h14" }));
+const IconClock = (p) => React.createElement(Svg, { ...p },
+    React.createElement("circle", { cx: "12", cy: "12", r: "8.5" }),
+    React.createElement("path", { d: "M12 7.5V12l3 2" }));
+const IconInfo = (p) => React.createElement(Svg, { ...p },
+    React.createElement("circle", { cx: "12", cy: "12", r: "8.5" }),
+    React.createElement("path", { d: "M12 11v5M12 8h.01" }));
+function Button({ variant = "primary", className = "", type = "button", children, ...rest }) {
+    const base = "inline-flex items-center justify-center gap-2 rounded-xl px-5 py-3 text-base font-bold leading-tight transition-colors disabled:cursor-not-allowed disabled:opacity-40";
+    const variants = {
+        primary: "bg-accent text-accent-ink hover:bg-accent/90",
+        secondary: "border border-line-strong bg-surface text-ink hover:border-ink/60",
+        quiet: "px-3 text-accent hover:bg-accent-soft",
+    };
+    return (React.createElement("button", { type: type, className: `${base} ${variants[variant]} ${className}`, ...rest }, children));
+}
+function ScreenTitle({ children, className = "" }) {
+    return (React.createElement("h1", { id: "screen-title", tabIndex: -1, className: `font-display text-[2rem] font-semibold leading-[1.08] tracking-[-0.025em] text-ink focus:outline-none sm:text-[2.6rem] ${className}` }, children));
+}
+function Page({ width = "max-w-6xl", children, padBottom = false }) {
+    return (React.createElement("div", { className: `mx-auto w-full ${width} px-5 pt-8 sm:px-8 sm:pt-12 ${padBottom ? "pb-40" : "pb-20"}` }, children));
+}
+function DemoBadge() {
+    return (React.createElement("span", { className: "inline-flex items-center rounded-md border border-dashed border-ochre/70 bg-ochre-soft px-2 py-0.5 text-xs font-bold text-ochre" }, "Fictional demo profile"));
+}
+function Monogram({ t, size = "md" }) {
+    const s = size === "lg" ? "h-16 w-16 text-2xl" : "h-12 w-12 text-lg";
+    return (React.createElement("span", { "aria-hidden": "true", className: `inline-flex shrink-0 items-center justify-center rounded-full border border-line-strong bg-paper font-display font-semibold text-ink ${s}` }, t.initials));
+}
+function AlignMark({ level, size = "md" }) {
+    const dim = size === "sm" ? "h-5 w-5" : "h-6 w-6";
+    const icon = size === "sm" ? "h-3 w-3" : "h-3.5 w-3.5";
+    if (level === "strong") {
+        return (React.createElement("span", { className: `inline-flex shrink-0 items-center justify-center rounded-full bg-accent text-accent-ink ${dim}`, "aria-hidden": "true" },
+            React.createElement(IconCheck, { className: icon, strokeWidth: 3 })));
+    }
+    if (level === "partial") {
+        return (React.createElement("span", { className: `inline-flex shrink-0 ${dim}`, "aria-hidden": "true" },
+            React.createElement("svg", { viewBox: "0 0 24 24", className: "h-full w-full" },
+                React.createElement("circle", { cx: "12", cy: "12", r: "10", fill: "none", stroke: "rgb(var(--ochre))", strokeWidth: "2.2" }),
+                React.createElement("path", { d: "M12 2a10 10 0 0 1 0 20z", fill: "rgb(var(--ochre))" }))));
+    }
+    if (level === "limited") {
+        return (React.createElement("span", { className: `inline-flex shrink-0 items-center justify-center rounded-full border-2 border-line-strong text-muted ${dim}`, "aria-hidden": "true" },
+            React.createElement("svg", { viewBox: "0 0 24 24", className: icon },
+                React.createElement("path", { d: "M6 12h12", stroke: "currentColor", strokeWidth: "3", strokeLinecap: "round" }))));
+    }
+    return (React.createElement("span", { className: `inline-flex shrink-0 items-center justify-center rounded-full border-2 border-dashed border-line-strong text-xs font-bold text-muted ${dim}`, "aria-hidden": "true" }, "?"));
+}
+function AlignLegend() {
+    return (React.createElement("ul", { className: "flex flex-wrap gap-x-5 gap-y-2 text-sm text-muted", "aria-label": "Alignment key" }, ["strong", "partial", "limited", "unknown"].map((l) => (React.createElement("li", { key: l, className: "flex items-center gap-2" },
+        React.createElement(AlignMark, { level: l, size: "sm" }),
+        LEVELS[l].label)))));
+}
+function Notice({ children, tone = "accent", className = "" }) {
+    const tones = {
+        accent: "border-accent/25 bg-accent-soft",
+        ochre: "border-ochre/40 bg-ochre-soft",
+        plain: "border-line bg-surface",
+    };
+    return (React.createElement("div", { className: `flex gap-3 rounded-xl border p-4 text-[0.95rem] leading-relaxed text-ink ${tones[tone]} ${className}` },
+        React.createElement(IconInfo, { className: "mt-0.5 h-5 w-5 shrink-0 text-accent" }),
+        React.createElement("div", null, children)));
+}
+function BottomBar({ children }) {
+    return (React.createElement("div", { className: "fixed inset-x-0 bottom-0 z-20 border-t border-line bg-paper/95 backdrop-blur", style: { paddingBottom: "calc(0.85rem + env(safe-area-inset-bottom, 0px))" } },
+        React.createElement("div", { className: "mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 px-5 pt-3.5 sm:px-8" }, children)));
+}
+/* Header: brand + the three-stage journey */
+function Logo() {
+    return (React.createElement("svg", { viewBox: "0 0 28 28", className: "h-7 w-7", "aria-hidden": "true" },
+        React.createElement("rect", { x: "3", y: "5", width: "22", height: "4.5", rx: "2.25", fill: "rgb(var(--accent))" }),
+        React.createElement("rect", { x: "3", y: "11.75", width: "16", height: "4.5", rx: "2.25", fill: "rgb(var(--accent))", opacity: "0.55" }),
+        React.createElement("rect", { x: "3", y: "18.5", width: "10", height: "4.5", rx: "2.25", fill: "rgb(var(--accent))", opacity: "0.3" })));
+}
+function Header({ step, onHome }) {
+    const stage = STEP_STAGE[step];
+    return (React.createElement("header", { className: "sticky z-30 border-b border-line bg-paper/90 backdrop-blur", style: { top: "env(safe-area-inset-top, 0px)" } },
+        React.createElement("div", { className: "mx-auto flex max-w-6xl items-center justify-between gap-4 px-5 py-3 sm:px-8" },
+            React.createElement("button", { type: "button", onClick: onHome, className: "flex items-center gap-2.5 rounded-md py-1", "aria-label": "FIT-FIRST home" },
+                React.createElement(Logo, null),
+                React.createElement("span", { className: "font-display text-lg font-semibold tracking-tight text-ink" }, "FIT-FIRST")),
+            stage === undefined ? (React.createElement("span", { className: "rounded-full border border-line-strong px-3 py-1 text-sm text-muted" }, "Prototype for testing")) : (React.createElement("nav", { "aria-label": "Your progress" },
+                React.createElement("p", { className: "text-sm text-muted sm:hidden" },
+                    "Stage ",
+                    stage + 1,
+                    " of 3: ",
+                    React.createElement("span", { className: "font-bold text-ink" }, STAGES[stage])),
+                React.createElement("ol", { className: "hidden items-center gap-2 sm:flex" }, STAGES.map((s, i) => {
+                    const state = i < stage ? "done" : i === stage ? "current" : "todo";
+                    return (React.createElement("li", { key: s, className: "flex items-center gap-2", "aria-current": state === "current" ? "step" : undefined },
+                        i > 0 && React.createElement("span", { className: `h-px w-6 ${i <= stage ? "bg-accent" : "bg-line-strong"}`, "aria-hidden": "true" }),
+                        React.createElement("span", { className: `inline-flex h-6 w-6 items-center justify-center rounded-full text-xs font-bold ${state === "current" ? "bg-accent text-accent-ink" : state === "done" ? "bg-accent-soft text-accent" : "border border-line-strong text-muted"}` }, state === "done" ? React.createElement(IconCheck, { className: "h-3.5 w-3.5", strokeWidth: 3 }) : i + 1),
+                        React.createElement("span", { className: `text-sm ${state === "current" ? "font-bold text-ink" : "text-muted"}` }, s)));
+                })))))));
+}
+function FitProgress({ current }) {
+    return (React.createElement("nav", { "aria-label": "Fit Profile progress", className: "mb-8" },
+        React.createElement("ol", { className: "grid grid-cols-4 gap-1.5" }, FIT_STEPS.map((s, i) => (React.createElement("li", { key: s, "aria-current": i === current ? "step" : undefined },
+            React.createElement("span", { className: `block h-1.5 rounded-full ${i <= current ? "bg-accent" : "bg-line"}`, "aria-hidden": "true" }),
+            React.createElement("span", { className: `mt-2 block text-xs sm:text-sm ${i === current ? "font-bold text-ink" : "text-muted"}` },
+                s,
+                React.createElement("span", { className: "sr-only" }, i < current ? " (completed)" : i === current ? " (current step)" : ""))))))));
+}
+function Footer() {
+    return (React.createElement("footer", { className: "border-t border-line" },
+        React.createElement("div", { className: "mx-auto max-w-6xl px-5 py-8 text-sm leading-relaxed text-muted sm:px-8" },
+            React.createElement("p", { className: "max-w-3xl" },
+                "FIT-FIRST is a university design prototype. It doesn't provide therapy, diagnosis or medical advice, and all therapist profiles are fictional. If you need support now, call Lifeline on ",
+                React.createElement("span", { className: "font-bold text-ink" }, "13 11 14"),
+                ", or",
+                " ",
+                React.createElement("span", { className: "font-bold text-ink" }, "000"),
+                " in an emergency."))));
+}
+/* ------------------------------------------------------------------ */
+/* Screen 1: Landing                                                   */
+/* ------------------------------------------------------------------ */
+function HeroPreview() {
+    const rows = [
+        ["Understands my background", ["strong", "partial", "strong"]],
+        ["Asks before giving advice", ["strong", "partial", "strong"]],
+        ["Practical strategies", ["partial", "strong", "partial"]],
+    ];
+    return (React.createElement("figure", { className: "relative mx-auto w-full max-w-md lg:mx-0" },
+        React.createElement("div", { className: "absolute inset-0 translate-x-3 translate-y-3 rounded-2xl border border-line bg-sunken", "aria-hidden": "true" }),
+        React.createElement("div", { className: "relative rounded-2xl border border-line bg-surface p-6 shadow-[0_1px_2px_rgb(var(--ink)/0.06),0_12px_32px_-12px_rgb(var(--ink)/0.18)] sm:p-7" },
+            React.createElement("div", { className: "flex items-baseline justify-between" },
+                React.createElement("p", { className: "font-display text-lg font-semibold text-ink" }, "Your Fit Profile"),
+                React.createElement("p", { className: "text-xs text-muted" }, "Example")),
+            React.createElement("ol", { className: "mt-5 space-y-4" }, rows.map(([label], i) => (React.createElement("li", { key: label, className: "flex items-center gap-4" },
+                React.createElement("span", { className: "font-display text-4xl font-semibold leading-none text-accent" }, i + 1),
+                React.createElement("span", { className: "text-[1.05rem] font-bold text-ink" }, label))))),
+            React.createElement("div", { className: "mt-6 border-t border-line pt-5" },
+                React.createElement("p", { className: "text-sm text-muted" }, "Alignment with your stated preferences"),
+                React.createElement("table", { className: "mt-3 w-full text-sm" },
+                    React.createElement("thead", null,
+                        React.createElement("tr", { className: "text-left text-muted" },
+                            React.createElement("th", { className: "pb-2 font-normal" },
+                                React.createElement("span", { className: "sr-only" }, "Priority")),
+                            ["A", "B", "C"].map((x) => React.createElement("th", { key: x, className: "pb-2 text-center font-normal" },
+                                "Profile ",
+                                x)))),
+                    React.createElement("tbody", null, rows.map(([label, levels], i) => (React.createElement("tr", { key: label },
+                        React.createElement("th", { scope: "row", className: "py-1.5 text-left font-bold text-ink" }, i + 1),
+                        levels.map((l, j) => (React.createElement("td", { key: j, className: "py-1.5 text-center" },
+                            React.createElement("span", { className: "inline-flex" },
+                                React.createElement(AlignMark, { level: l, size: "sm" })),
+                            React.createElement("span", { className: "sr-only" }, LEVELS[l].label))))))))))),
+        React.createElement("figcaption", { className: "sr-only" }, "Example of a Fit Profile with three priorities, and how three profiles line up against them.")));
+}
+function Landing({ onStart }) {
+    const scrollToHow = () => {
+        var _a;
+        const reduce = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+        (_a = document.getElementById("how")) === null || _a === void 0 ? void 0 : _a.scrollIntoView({ behavior: reduce ? "auto" : "smooth", block: "start" });
+    };
+    const steps = [
+        ["Discover", "Identify what matters to you.", "What actually matters to me?"],
+        ["Compare", "See how different therapist profiles align with your priorities.", "Which options align with those priorities?"],
+        ["Decide", "Make a more informed choice before booking.", "I understand why I might choose this person."],
+    ];
+    return (React.createElement(React.Fragment, null,
+        React.createElement("section", { className: "mx-auto grid max-w-6xl gap-14 px-5 pb-20 pt-12 sm:px-8 lg:grid-cols-[1.2fr_0.8fr] lg:items-center lg:gap-16 lg:pt-20" },
+            React.createElement("div", null,
+                React.createElement("p", { className: "font-display text-lg font-semibold tracking-tight text-accent" }, "FIT-FIRST"),
+                React.createElement("h1", { id: "screen-title", tabIndex: -1, className: "mt-4 max-w-[12ch] font-display text-[clamp(2.8rem,7.2vw,5.2rem)] font-semibold leading-[0.98] tracking-[-0.04em] text-ink focus:outline-none" }, "Know what matters before you commit."),
+                React.createElement("p", { className: "mt-7 max-w-[36rem] text-lg leading-relaxed text-muted" }, "Choosing a therapist can feel uncertain. FIT-FIRST helps you identify what matters to you and compare support based on the things you actually care about."),
+                React.createElement("div", { className: "mt-9 flex flex-wrap items-center gap-3" },
+                    React.createElement(Button, { onClick: onStart, className: "px-7 py-3.5 text-[1.05rem]" }, "Find my fit"),
+                    React.createElement("button", { type: "button", onClick: scrollToHow, className: "rounded-lg px-3 py-3 font-bold text-accent underline decoration-accent/40 underline-offset-4 hover:decoration-accent" }, "How it works")),
+                React.createElement("div", { className: "mt-10 max-w-[36rem] rounded-xl border border-line bg-surface p-5" },
+                    React.createElement("p", { className: "font-display text-lg font-semibold text-ink" }, "No diagnosis. No commitment. You decide what matters."),
+                    React.createElement("p", { className: "mt-1.5 text-[0.95rem] leading-relaxed text-muted" }, "FIT-FIRST doesn't provide therapy or medical advice, and it won't ask about symptoms or diagnoses."))),
+            React.createElement(HeroPreview, null)),
+        React.createElement("section", { id: "how", className: "scroll-mt-24 border-y border-line bg-surface" },
+            React.createElement("div", { className: "mx-auto max-w-6xl px-5 py-16 sm:px-8 sm:py-20" },
+                React.createElement("div", { className: "max-w-2xl" },
+                    React.createElement("h2", { className: "font-display text-[1.9rem] font-semibold leading-tight tracking-[-0.02em] text-ink sm:text-[2.3rem]" }, "Finding the right support shouldn't start with guesswork."),
+                    React.createElement("p", { className: "mt-4 text-lg leading-relaxed text-muted" }, "Most people get stuck on one question: how do I know who will suit me? FIT-FIRST doesn't answer it for you. It helps you get clear on what you're looking for, so the choice is yours and you know why you made it.")),
+                React.createElement("ol", { className: "mt-12 grid gap-px overflow-hidden rounded-2xl border border-line bg-line md:grid-cols-3" }, steps.map(([title, text, q], i) => (React.createElement("li", { key: title, className: "flex flex-col bg-paper p-6 sm:p-7" },
+                    React.createElement("span", { className: "font-display text-5xl font-semibold leading-none text-accent" }, i + 1),
+                    React.createElement("h3", { className: "mt-6 font-display text-xl font-semibold text-ink" }, title),
+                    React.createElement("p", { className: "mt-2 leading-relaxed text-ink" }, text),
+                    React.createElement("p", { className: "mt-5 border-t border-line pt-4 text-[0.95rem] italic text-muted" },
+                        "\u201C",
+                        q,
+                        "\u201D"))))),
+                React.createElement("div", { className: "mt-10 flex flex-wrap items-center gap-4" },
+                    React.createElement(Button, { onClick: onStart }, "Find my fit"),
+                    React.createElement("p", { className: "text-muted" }, "Takes about 2 minutes. Nothing is saved or sent."))))));
+}
+/* ------------------------------------------------------------------ */
+/* Screen 2: Introduction                                              */
+/* ------------------------------------------------------------------ */
+function Intro({ onBack, onStart }) {
+    const steps = [
+        "If you've tried therapy before, tell us what you'd want to be different. This part is optional.",
+        "Choose everything that feels important to you. Pick as many as you like.",
+        "Narrow those down to your top 3.",
+    ];
+    return (React.createElement(Page, { width: "max-w-3xl" },
+        React.createElement(ScreenTitle, null, "What would help you feel understood?"),
+        React.createElement("p", { className: "mt-5 text-lg leading-relaxed text-muted" }, "There is no \u2018perfect\u2019 therapist for everyone. Choose the things that would matter most to you."),
+        React.createElement("ol", { className: "mt-10 space-y-5" }, steps.map((s, i) => (React.createElement("li", { key: i, className: "flex gap-4" },
+            React.createElement("span", { className: "inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-line-strong font-display font-semibold text-ink" }, i + 1),
+            React.createElement("p", { className: "pt-1 leading-relaxed text-ink" }, s))))),
+        React.createElement("p", { className: "mt-10 flex items-center gap-2 font-bold text-ink" },
+            React.createElement(IconClock, { className: "h-5 w-5 text-accent" }),
+            "This takes about 2 minutes."),
+        React.createElement(Notice, { tone: "plain", className: "mt-5" }, "We won't ask about diagnoses, symptoms or anything you'd rather keep to yourself. Your answers stay in this browser tab."),
+        React.createElement("div", { className: "mt-10 flex flex-wrap gap-3" },
+            React.createElement(Button, { variant: "secondary", onClick: onBack },
+                React.createElement(IconBack, { className: "h-4 w-4" }),
+                "Back"),
+            React.createElement(Button, { onClick: onStart, className: "px-8" }, "Start"))));
+}
+/* ------------------------------------------------------------------ */
+/* Optional: previous therapy experience                               */
+/* ------------------------------------------------------------------ */
+function CheckChip({ checked, onChange, children, name }) {
+    return (React.createElement("label", { className: "relative inline-flex" },
+        React.createElement("input", { type: "checkbox", name: name, className: "peer sr-only", checked: checked, onChange: onChange }),
+        React.createElement("span", { className: "inline-flex cursor-pointer items-center gap-2 rounded-lg border border-line-strong bg-surface px-3.5 py-2.5 text-[0.95rem] text-ink transition-colors hover:border-ink/60 peer-checked:border-accent peer-checked:bg-accent-soft peer-checked:font-bold peer-focus-visible:outline peer-focus-visible:outline-[2.5px] peer-focus-visible:outline-offset-2 peer-focus-visible:outline-accent" },
+            React.createElement("span", { className: `inline-flex h-4 w-4 items-center justify-center rounded border ${checked ? "border-accent bg-accent text-accent-ink" : "border-line-strong"}`, "aria-hidden": "true" }, checked && React.createElement(IconCheck, { className: "h-3 w-3", strokeWidth: 3.5 })),
+            children)));
+}
+function PriorTherapy({ prior, setPrior, onBack, onNext }) {
+    const toggleChange = (id) => setPrior((p) => ({ ...p, changes: p.changes.includes(id) ? p.changes.filter((c) => c !== id) : [...p.changes, id] }));
+    const choice = (val, label) => (React.createElement("button", { type: "button", "aria-pressed": prior.tried === val, onClick: () => setPrior((p) => ({ ...p, tried: p.tried === val ? null : val })), className: `min-w-[7rem] rounded-xl border px-5 py-3.5 text-left font-bold transition-colors ${prior.tried === val ? "border-accent bg-accent-soft text-ink ring-1 ring-accent" : "border-line-strong bg-surface text-ink hover:border-ink/60"}` }, label));
+    return (React.createElement(Page, { width: "max-w-3xl" },
+        React.createElement(FitProgress, { current: 0 }),
+        React.createElement(ScreenTitle, null, "Have you tried therapy before?"),
+        React.createElement("p", { className: "mt-4 text-lg leading-relaxed text-muted" }, "Optional. If you have, it can help to notice what you'd want to be different next time. You can skip this."),
+        React.createElement("div", { className: "mt-8 flex flex-wrap gap-3", role: "group", "aria-label": "Have you tried therapy before?" },
+            choice("yes", "Yes"),
+            choice("no", "No")),
+        prior.tried === "yes" && (React.createElement("fieldset", { className: "mt-10 rounded-2xl border border-line bg-surface p-5 sm:p-6" },
+            React.createElement("legend", { className: "px-1 font-display text-xl font-semibold text-ink" }, "What would you want to be different next time?"),
+            React.createElement("p", { className: "mt-1 text-muted" }, "Choose any that apply. We'll add these to your Fit Profile."),
+            React.createElement("div", { className: "mt-5 flex flex-wrap gap-2.5" }, PRIOR_CHANGES.map((c) => (React.createElement(CheckChip, { key: c.id, name: "prior-change", checked: prior.changes.includes(c.id), onChange: () => toggleChange(c.id) }, c.label)))),
+            prior.changes.includes("other") && (React.createElement("div", { className: "mt-5" },
+                React.createElement("label", { htmlFor: "prior-other", className: "block font-bold text-ink" }, "Tell us what else"),
+                React.createElement("input", { id: "prior-other", type: "text", maxLength: 120, value: prior.other, onChange: (e) => setPrior((p) => ({ ...p, other: e.target.value })), className: "mt-2 w-full rounded-lg border border-line-strong bg-paper px-3.5 py-2.5 text-ink placeholder:text-muted", placeholder: "For example: sessions at a different time of day" }))))),
+        React.createElement("div", { className: "mt-10 flex flex-wrap gap-3" },
+            React.createElement(Button, { variant: "secondary", onClick: onBack },
+                React.createElement(IconBack, { className: "h-4 w-4" }),
+                "Back"),
+            React.createElement(Button, { onClick: onNext, className: "px-8" }, prior.tried === null ? "Skip" : "Continue"))));
+}
+/* ------------------------------------------------------------------ */
+/* Screen 3a: Select priorities                                        */
+/* ------------------------------------------------------------------ */
+function PriorityCard({ p, selected, related, onToggle }) {
+    return (React.createElement("button", { type: "button", "aria-pressed": selected, onClick: onToggle, className: `group flex h-full w-full items-start gap-3.5 rounded-xl border p-4 text-left transition-colors sm:p-5 ${selected ? "border-accent bg-accent-soft ring-1 ring-accent" : "border-line bg-surface hover:border-line-strong"}` },
+        React.createElement("span", { className: `mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-md border transition-colors ${selected ? "border-accent bg-accent text-accent-ink" : "border-line-strong bg-paper group-hover:border-ink/50"}`, "aria-hidden": "true" }, selected && React.createElement(IconCheck, { className: "h-3.5 w-3.5", strokeWidth: 3.5 })),
+        React.createElement("span", { className: "flex flex-col gap-1.5" },
+            React.createElement("span", { className: "text-[1.02rem] leading-snug text-ink" }, p.text),
+            p.optional && React.createElement("span", { className: "text-sm text-muted" }, "Only if it's relevant to you"),
+            related && React.createElement("span", { className: "text-sm font-bold text-ochre" }, "Linked to what you'd change next time"))));
+}
+function SelectPriorities({ selected, toggle, custom, setCustom, relatedIds, onBack, onNext }) {
+    const count = selected.length + (custom.open && custom.text.trim() ? 1 : 0);
+    return (React.createElement(Page, { padBottom: true },
+        React.createElement("div", { className: "max-w-3xl" },
+            React.createElement(FitProgress, { current: 1 }),
+            React.createElement(ScreenTitle, null, "Choose what feels important"),
+            React.createElement("p", { className: "mt-4 text-lg leading-relaxed text-muted" }, "Select as many as you like. You'll narrow them down to 3 on the next screen. Every card is optional, including the ones about culture and faith.")),
+        React.createElement("ul", { className: "mt-9 grid gap-3 sm:grid-cols-2 lg:grid-cols-3" }, PRIORITIES.map((p) => (React.createElement("li", { key: p.id },
+            React.createElement(PriorityCard, { p: p, selected: selected.includes(p.id), related: relatedIds.has(p.id), onToggle: () => toggle(p.id) }))))),
+        React.createElement("div", { className: "mt-3 rounded-xl border border-dashed border-line-strong bg-paper p-4 sm:p-5" },
+            React.createElement("button", { type: "button", "aria-expanded": custom.open, "aria-controls": "custom-field", onClick: () => setCustom((c) => ({ ...c, open: !c.open })), className: "flex items-center gap-2.5 rounded-md font-bold text-ink" },
+                React.createElement("span", { className: `inline-flex h-5 w-5 items-center justify-center rounded-md border border-line-strong transition-transform ${custom.open ? "rotate-45" : ""}`, "aria-hidden": "true" },
+                    React.createElement(IconPlus, { className: "h-3.5 w-3.5", strokeWidth: 2.5 })),
+                "Something important is missing"),
+            custom.open && (React.createElement("div", { id: "custom-field", className: "mt-4 max-w-2xl" },
+                React.createElement("label", { htmlFor: "custom-text", className: "block text-[0.95rem] text-muted" }, "Describe it in a few words. Keep it general; there's no need to share personal health details."),
+                React.createElement("textarea", { id: "custom-text", rows: 2, maxLength: 120, value: custom.text, onChange: (e) => setCustom((c) => ({ ...c, text: e.target.value })), className: "mt-2 w-full resize-none rounded-lg border border-line-strong bg-surface px-3.5 py-2.5 text-ink placeholder:text-muted", placeholder: "For example: someone who understands working while studying" }),
+                React.createElement("p", { className: "mt-1 text-right text-xs text-muted", "aria-live": "polite" },
+                    custom.text.length,
+                    "/120")))),
+        React.createElement(BottomBar, null,
+            React.createElement("p", { className: "text-[0.95rem] text-ink", "aria-live": "polite" },
+                React.createElement("span", { className: "font-bold" },
+                    count,
+                    " selected"),
+                count < 3 && React.createElement("span", { className: "ml-3 text-muted" }, "Choose at least 3 to continue")),
+            React.createElement("div", { className: "flex gap-2.5" },
+                React.createElement(Button, { variant: "secondary", onClick: onBack },
+                    React.createElement(IconBack, { className: "h-4 w-4" }),
+                    "Back"),
+                React.createElement(Button, { onClick: onNext, disabled: count < 3 }, "Continue")))));
+}
+/* ------------------------------------------------------------------ */
+/* Screen 3b: Choose top 3                                             */
+/* ------------------------------------------------------------------ */
+function TopThreeSlots({ top3, getP, onRemove, onMoveUp, compact = false }) {
+    return (React.createElement("ol", { className: `grid gap-3 ${compact ? "md:grid-cols-3" : "sm:grid-cols-3"}` }, [0, 1, 2].map((i) => {
+        const pid = top3[i];
+        const p = pid ? getP(pid) : null;
+        if (!p) {
+            return (React.createElement("li", { key: `empty-${i}`, className: `flex items-center gap-4 rounded-xl border-2 border-dashed border-line-strong ${compact ? "p-3.5" : "min-h-[7.5rem] p-5"}` },
+                React.createElement("span", { className: "font-display text-4xl font-semibold leading-none text-line-strong", "aria-hidden": "true" }, i + 1),
+                React.createElement("span", { className: "text-muted" },
+                    "Choose your number ",
+                    i + 1)));
+        }
+        return (React.createElement("li", { key: pid, className: `slot-in relative flex items-start gap-4 rounded-xl border border-accent bg-surface ${compact ? "p-3.5" : "min-h-[7.5rem] p-5"} shadow-[0_6px_20px_-12px_rgb(var(--accent)/0.6)]` },
+            React.createElement("span", { className: `font-display font-semibold leading-none text-accent ${compact ? "text-3xl" : "text-5xl"}`, "aria-hidden": "true" }, i + 1),
+            React.createElement("div", { className: "min-w-0 flex-1" },
+                React.createElement("span", { className: "sr-only" },
+                    "Priority ",
+                    i + 1,
+                    ": "),
+                React.createElement("p", { className: `font-bold leading-snug text-ink ${compact ? "" : "text-[1.05rem]"}` }, p.short),
+                (onRemove || onMoveUp) && (React.createElement("div", { className: "mt-3 flex flex-wrap gap-1.5" },
+                    onMoveUp && i > 0 && (React.createElement("button", { type: "button", onClick: () => onMoveUp(i), "aria-label": `Move ${p.short} up to number ${i}`, className: "inline-flex items-center gap-1 rounded-md border border-line px-2 py-1 text-xs font-bold text-muted hover:border-line-strong hover:text-ink" },
+                        React.createElement(IconUp, { className: "h-3.5 w-3.5" }),
+                        " Move up")),
+                    onRemove && (React.createElement("button", { type: "button", onClick: () => onRemove(pid), "aria-label": `Remove ${p.short} from top 3`, className: "inline-flex items-center gap-1 rounded-md border border-line px-2 py-1 text-xs font-bold text-muted hover:border-line-strong hover:text-ink" },
+                        React.createElement(IconX, { className: "h-3.5 w-3.5" }),
+                        " Remove")))))));
+    })));
+}
+function RankPriorities({ selectedAll, top3, setTop3, getP, onBack, onNext }) {
+    const [message, setMessage] = useState("");
+    const full = top3.length >= 3;
+    const pick = (pid) => {
+        const p = getP(pid);
+        if (top3.includes(pid)) {
+            setTop3(top3.filter((x) => x !== pid));
+            setMessage(`${p.short} removed from your top 3.`);
+        }
+        else if (full) {
+            setMessage("Your top 3 is full. Remove one to swap this in.");
+        }
+        else {
+            setTop3([...top3, pid]);
+            setMessage(`${p.short} added as number ${top3.length + 1}.`);
+        }
+    };
+    const moveUp = (i) => {
+        const next = [...top3];
+        [next[i - 1], next[i]] = [next[i], next[i - 1]];
+        setTop3(next);
+        setMessage(`${getP(next[i - 1]).short} moved to number ${i}.`);
+    };
+    return (React.createElement(Page, { padBottom: true },
+        React.createElement("div", { className: "max-w-3xl" },
+            React.createElement(FitProgress, { current: 2 }),
+            React.createElement(ScreenTitle, null, "Now choose the 3 that matter most."),
+            React.createElement("p", { className: "mt-4 text-lg leading-relaxed text-muted" }, "Select them in order of importance. You can reorder or swap them at any time.")),
+        React.createElement("section", { "aria-label": "Your top 3", className: "mt-9" },
+            React.createElement(TopThreeSlots, { top3: top3, getP: getP, onRemove: pick, onMoveUp: moveUp })),
+        React.createElement("p", { className: "sr-only", "aria-live": "polite" }, message),
+        React.createElement("section", { className: "mt-12", "aria-labelledby": "pool-title" },
+            React.createElement("h2", { id: "pool-title", className: "font-display text-xl font-semibold text-ink" }, "Everything you chose"),
+            full && React.createElement("p", { className: "mt-1 text-muted" }, "Your top 3 is full. Select one of the 3 again, or use Remove above, to swap."),
+            React.createElement("ul", { className: "mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-3" }, selectedAll.map((pid) => {
+                const p = getP(pid);
+                const rank = top3.indexOf(pid);
+                const ranked = rank > -1;
+                return (React.createElement("li", { key: pid },
+                    React.createElement("button", { type: "button", "aria-pressed": ranked, onClick: () => pick(pid), "aria-label": ranked ? `${p.text}. Number ${rank + 1} in your top 3. Select to remove.` : `${p.text}. Select to add to your top 3.`, className: `flex h-full w-full items-start gap-3.5 rounded-xl border p-4 text-left transition sm:p-5 ${ranked ? "border-accent bg-accent-soft ring-1 ring-accent"
+                            : full ? "border-line bg-surface opacity-55 hover:opacity-80"
+                                : "border-line bg-surface hover:border-line-strong"}` },
+                        React.createElement("span", { className: `inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full font-display text-sm font-semibold ${ranked ? "bg-accent text-accent-ink" : "border border-dashed border-line-strong text-transparent"}`, "aria-hidden": "true" }, ranked ? rank + 1 : null),
+                        React.createElement("span", { className: "pt-0.5 text-[1.02rem] leading-snug text-ink" }, p.text))));
+            }))),
+        React.createElement(BottomBar, null,
+            React.createElement("p", { className: "text-[0.95rem] text-ink" },
+                React.createElement("span", { className: "font-bold" },
+                    top3.length,
+                    " of 3"),
+                " ",
+                React.createElement("span", { className: "text-muted" }, "chosen")),
+            React.createElement("div", { className: "flex gap-2.5" },
+                React.createElement(Button, { variant: "secondary", onClick: onBack },
+                    React.createElement(IconBack, { className: "h-4 w-4" }),
+                    "Back"),
+                React.createElement(Button, { onClick: onNext, disabled: top3.length < 3 }, "See my Fit Profile")))));
+}
+/* ------------------------------------------------------------------ */
+/* Screen 4: Fit Profile                                               */
+/* ------------------------------------------------------------------ */
+function FitProfile({ top3, others, getP, prior, onEdit, onNext }) {
+    const priorItems = prior.tried === "yes"
+        ? prior.changes.filter((c) => c !== "other").map((c) => PRIOR_CHANGES.find((x) => x.id === c).label)
+            .concat(prior.changes.includes("other") && prior.other.trim() ? [prior.other.trim()] : [])
+        : [];
+    return (React.createElement(Page, null,
+        React.createElement("div", { className: "max-w-3xl" },
+            React.createElement(FitProgress, { current: 3 }),
+            React.createElement(ScreenTitle, null, "Your Fit Profile"),
+            React.createElement("p", { className: "mt-4 text-lg leading-relaxed text-muted" }, "These are the things you told us matter most when choosing support.")),
+        React.createElement("ol", { className: "mt-10 grid overflow-hidden rounded-2xl border border-line bg-surface md:grid-cols-3" }, top3.map((pid, i) => {
+            const p = getP(pid);
+            return (React.createElement("li", { key: pid, className: `p-6 sm:p-8 ${i > 0 ? "border-t border-line md:border-l md:border-t-0" : ""}` },
+                React.createElement("span", { className: "font-display text-6xl font-semibold leading-none tracking-tight text-accent", "aria-hidden": "true" }, i + 1),
+                React.createElement("span", { className: "sr-only" },
+                    "Priority ",
+                    i + 1,
+                    ": "),
+                React.createElement("p", { className: "mt-5 font-display text-[1.45rem] font-semibold leading-tight tracking-[-0.01em] text-ink" }, p.short),
+                React.createElement("p", { className: "mt-2 leading-relaxed text-muted" }, p.custom ? "Your own priority" : p.text)));
+        })),
+        React.createElement("div", { className: "mt-12 grid gap-10 lg:grid-cols-2" },
+            others.length > 0 && (React.createElement("section", { "aria-labelledby": "also-title" },
+                React.createElement("h2", { id: "also-title", className: "font-display text-xl font-semibold text-ink" }, "Also important to you"),
+                React.createElement("ul", { className: "mt-4 flex flex-wrap gap-2" }, others.map((pid) => (React.createElement("li", { key: pid, className: "rounded-lg border border-line-strong bg-surface px-3.5 py-2 text-[0.95rem] text-ink" }, getP(pid).short)))))),
+            priorItems.length > 0 && (React.createElement("section", { "aria-labelledby": "prior-title" },
+                React.createElement("h2", { id: "prior-title", className: "font-display text-xl font-semibold text-ink" }, "Next time, you'd want"),
+                React.createElement("ul", { className: "mt-4 flex flex-wrap gap-2" }, priorItems.map((label) => (React.createElement("li", { key: label, className: "rounded-lg border border-ochre/40 bg-ochre-soft px-3.5 py-2 text-[0.95rem] text-ink" }, label))))))),
+        React.createElement(Notice, { className: "mt-12 max-w-3xl" }, "Your priorities are not a diagnosis. They simply help you think about the kind of therapeutic relationship you may prefer."),
+        React.createElement("div", { className: "mt-10 flex flex-wrap gap-3" },
+            React.createElement(Button, { variant: "secondary", onClick: onEdit },
+                React.createElement(IconBack, { className: "h-4 w-4" }),
+                "Edit priorities"),
+            React.createElement(Button, { onClick: onNext }, "Compare therapist profiles"))));
+}
+/* ------------------------------------------------------------------ */
+/* Screen 5: Comparison                                                */
+/* ------------------------------------------------------------------ */
+const FACT_ROWS = [
+    ["Approach", (t) => t.approach],
+    ["Experience", (t) => t.experience.join(", ")],
+    ["Cultural context", (t) => t.cultural],
+    ["Faith and values", (t) => t.faith],
+    ["Format", (t) => t.format],
+    ["Example cost", (t) => `${t.cost} (${t.costLabel.toLowerCase()})`],
+    ["Next availability", (t) => t.availability],
+];
+function AlignmentItem({ t, pid, index, getP, size = "md" }) {
+    const a = alignmentFor(t, pid);
+    const p = getP(pid);
+    return (React.createElement("li", { className: "flex gap-3" },
+        React.createElement("span", { className: "mt-0.5" },
+            React.createElement(AlignMark, { level: a.level, size: size === "sm" ? "sm" : "md" })),
+        React.createElement("div", { className: "min-w-0" },
+            React.createElement("p", { className: `font-bold leading-snug text-ink ${size === "sm" ? "text-[0.95rem]" : ""}` },
+                index !== undefined && `${index + 1}. `,
+                p.short),
+            React.createElement("p", { className: "mt-0.5 text-sm leading-snug text-muted" },
+                React.createElement("span", { className: "font-bold text-ink/80" },
+                    LEVELS[a.level].label,
+                    "."),
+                " ",
+                a.note))));
+}
+function TherapistCard({ t, top3, getP, considering, onView, onToggleConsider }) {
+    return (React.createElement("article", { "aria-labelledby": `name-${t.id}`, className: "flex flex-col overflow-hidden rounded-2xl border border-line bg-surface" },
+        React.createElement("div", { className: "p-5 sm:p-6" },
+            React.createElement("div", { className: "flex items-start gap-4" },
+                React.createElement(Monogram, { t: t }),
+                React.createElement("div", { className: "min-w-0" },
+                    React.createElement(DemoBadge, null),
+                    React.createElement("h2", { id: `name-${t.id}`, className: "mt-2 font-display text-[1.35rem] font-semibold leading-tight tracking-tight text-ink" }, t.name),
+                    React.createElement("p", { className: "text-sm text-muted" }, t.role))),
+            React.createElement("p", { className: "mt-5 text-ink" },
+                React.createElement("span", { className: "text-muted" }, "Communication: "),
+                React.createElement("span", { className: "font-bold" }, t.communication))),
+        React.createElement("div", { className: "border-y border-line bg-sunken px-5 py-5 sm:px-6" },
+            React.createElement("h3", { className: "text-sm font-bold text-ink" }, "Alignment with your stated preferences"),
+            React.createElement("ul", { className: "mt-4 space-y-4" }, top3.map((pid, i) => React.createElement(AlignmentItem, { key: pid, t: t, pid: pid, index: i, getP: getP })))),
+        React.createElement("dl", { className: "space-y-3 px-5 py-5 text-[0.95rem] sm:px-6" }, FACT_ROWS.map(([label, get]) => (React.createElement("div", { key: label, className: "grid grid-cols-[8.25rem_1fr] gap-3" },
+            React.createElement("dt", { className: "text-muted" }, label),
+            React.createElement("dd", { className: "text-ink" }, get(t)))))),
+        React.createElement("p", { className: "mx-5 mb-5 rounded-lg border border-ochre/35 bg-ochre-soft px-3.5 py-3 text-[0.95rem] leading-snug text-ink sm:mx-6" },
+            React.createElement("span", { className: "font-bold" }, "To weigh: "),
+            t.tradeoff),
+        React.createElement("div", { className: "mt-auto flex flex-wrap gap-2 border-t border-line p-4 sm:px-6" },
+            React.createElement(Button, { onClick: onView, className: "flex-1" }, "View profile"),
+            React.createElement(Button, { variant: "secondary", "aria-pressed": considering, onClick: onToggleConsider, className: `flex-1 ${considering ? "border-accent bg-accent-soft" : ""}` },
+                considering && React.createElement(IconCheck, { className: "h-4 w-4 text-accent", strokeWidth: 3 }),
+                considering ? "Considering" : "I'd consider"))));
+}
+function CompareTable({ top3, getP, considering, onView }) {
+    return (React.createElement("div", { className: "overflow-x-auto rounded-2xl border border-line bg-surface" },
+        React.createElement("table", { className: "w-full min-w-[820px] border-collapse text-left text-[0.95rem]" },
+            React.createElement("caption", { className: "sr-only" }, "Side-by-side comparison of three fictional demo profiles against your top 3 priorities"),
+            React.createElement("thead", null,
+                React.createElement("tr", { className: "border-b border-line" },
+                    React.createElement("th", { scope: "col", className: "sticky left-0 z-10 w-52 bg-surface p-4 align-bottom text-sm font-bold text-muted" }, "Your priorities"),
+                    THERAPISTS.map((t) => (React.createElement("th", { key: t.id, scope: "col", className: "p-4 align-bottom font-normal" },
+                        React.createElement(DemoBadge, null),
+                        React.createElement("p", { className: "mt-2 font-display text-lg font-semibold text-ink" }, t.name),
+                        React.createElement("p", { className: "text-sm text-muted" }, t.communication),
+                        React.createElement("div", { className: "mt-3 flex items-center gap-3" },
+                            React.createElement("button", { type: "button", onClick: () => onView(t.id), className: "rounded-md text-sm font-bold text-accent underline decoration-accent/40 underline-offset-4 hover:decoration-accent" },
+                                "View profile",
+                                React.createElement("span", { className: "sr-only" },
+                                    " for ",
+                                    t.name)),
+                            considering.includes(t.id) && (React.createElement("span", { className: "inline-flex items-center gap-1 text-sm font-bold text-accent" },
+                                React.createElement(IconCheck, { className: "h-4 w-4", strokeWidth: 3 }),
+                                "Considering")))))))),
+            React.createElement("tbody", null,
+                React.createElement("tr", null,
+                    React.createElement("th", { colSpan: 4, scope: "colgroup", className: "bg-accent-soft px-4 py-2.5 text-sm font-bold text-ink" }, "Alignment with your stated preferences")),
+                top3.map((pid, i) => (React.createElement("tr", { key: pid, className: "border-b border-line" },
+                    React.createElement("th", { scope: "row", className: "sticky left-0 z-10 bg-surface p-4 align-top font-bold text-ink" },
+                        i + 1,
+                        ". ",
+                        getP(pid).short),
+                    THERAPISTS.map((t) => {
+                        const a = alignmentFor(t, pid);
+                        return (React.createElement("td", { key: t.id, className: "p-4 align-top" },
+                            React.createElement("div", { className: "flex gap-2.5" },
+                                React.createElement(AlignMark, { level: a.level, size: "sm" }),
+                                React.createElement("div", null,
+                                    React.createElement("p", { className: "font-bold leading-snug text-ink" }, LEVELS[a.level].label),
+                                    React.createElement("p", { className: "mt-0.5 text-sm leading-snug text-muted" }, a.note)))));
+                    })))),
+                React.createElement("tr", null,
+                    React.createElement("th", { colSpan: 4, scope: "colgroup", className: "bg-sunken px-4 py-2.5 text-sm font-bold text-ink" }, "Details")),
+                [["Communication", (t) => t.communication], ...FACT_ROWS, ["To weigh", (t) => t.tradeoff]].map(([label, get]) => (React.createElement("tr", { key: label, className: "border-b border-line last:border-0" },
+                    React.createElement("th", { scope: "row", className: "sticky left-0 z-10 bg-surface p-4 align-top font-normal text-muted" }, label),
+                    THERAPISTS.map((t) => React.createElement("td", { key: t.id, className: "p-4 align-top text-ink" }, get(t))))))))));
+}
+function Compare({ top3, getP, view, setView, considering, toggleConsider, onView, onEditTop3, onFinish }) {
+    const names = THERAPISTS.filter((t) => considering.includes(t.id)).map((t) => t.name);
+    const viewBtn = (id, label) => (React.createElement("button", { type: "button", "aria-pressed": view === id, onClick: () => setView(id), className: `rounded-lg px-4 py-2 text-[0.95rem] font-bold transition-colors ${view === id ? "bg-surface text-ink shadow-[0_1px_3px_rgb(var(--ink)/0.12)]" : "text-muted hover:text-ink"}` }, label));
+    return (React.createElement(Page, null,
+        React.createElement("div", { className: "max-w-3xl" },
+            React.createElement(ScreenTitle, null, "Compare therapist profiles"),
+            React.createElement("p", { className: "mt-4 text-lg leading-relaxed text-muted" }, "Three profiles, always shown in the same order. FIT-FIRST doesn't rank them or pick one for you. Each involves trade-offs, so look at what matters most to you.")),
+        React.createElement("div", { className: "mt-8 flex gap-3 rounded-xl border-2 border-dashed border-ochre/60 bg-ochre-soft p-4 text-ink" },
+            React.createElement(IconInfo, { className: "mt-0.5 h-5 w-5 shrink-0 text-ochre" }),
+            React.createElement("p", { className: "leading-relaxed" },
+                React.createElement("span", { className: "font-bold" }, "These are demonstration profiles."),
+                " The therapists, fees and availability are fictional and were written for testing this prototype. No real practitioners, no bookings.")),
+        React.createElement("section", { "aria-labelledby": "top3-strip", className: "mt-10" },
+            React.createElement("div", { className: "flex flex-wrap items-baseline justify-between gap-2" },
+                React.createElement("h2", { id: "top3-strip", className: "font-display text-xl font-semibold text-ink" }, "Your top 3"),
+                React.createElement("button", { type: "button", onClick: onEditTop3, className: "rounded-md text-[0.95rem] font-bold text-accent underline decoration-accent/40 underline-offset-4 hover:decoration-accent" }, "Change my top 3")),
+            React.createElement("div", { className: "mt-4" },
+                React.createElement(TopThreeSlots, { top3: top3, getP: getP, compact: true }))),
+        React.createElement("div", { className: "mt-10 flex flex-wrap items-center justify-between gap-4" },
+            React.createElement("div", { className: "inline-flex rounded-xl bg-sunken p-1", role: "group", "aria-label": "Comparison layout" },
+                viewBtn("cards", "Profiles"),
+                viewBtn("table", "Side by side")),
+            React.createElement(AlignLegend, null)),
+        React.createElement("div", { className: "mt-6" }, view === "cards" ? (React.createElement("div", { className: "grid gap-5 lg:grid-cols-3" }, THERAPISTS.map((t) => (React.createElement(TherapistCard, { key: t.id, t: t, top3: top3, getP: getP, considering: considering.includes(t.id), onView: () => onView(t.id), onToggleConsider: () => toggleConsider(t.id) }))))) : (React.createElement(CompareTable, { top3: top3, getP: getP, considering: considering, onView: onView }))),
+        React.createElement("p", { className: "mt-6 max-w-3xl text-sm leading-relaxed text-muted" }, "Alignment compares each profile's information with what you told us. It isn't a prediction of how therapy would go, and a strong alignment doesn't guarantee a good fit."),
+        React.createElement("section", { className: "mt-12 flex flex-col gap-5 rounded-2xl border border-line bg-surface p-6 sm:flex-row sm:items-center sm:justify-between sm:p-8" },
+            React.createElement("div", null,
+                React.createElement("h2", { className: "font-display text-xl font-semibold text-ink" }, "Finished comparing?"),
+                React.createElement("p", { className: "mt-1.5 text-muted", "aria-live": "polite" }, names.length ? `You'd consider ${names.join(" and ")}.` : "You haven't marked anyone yet, and that's a valid outcome too.")),
+            React.createElement(Button, { onClick: onFinish }, "Continue to feedback"))));
+}
+/* ------------------------------------------------------------------ */
+/* Screen 6: Therapist detail                                          */
+/* ------------------------------------------------------------------ */
+function DetailSection({ title, children }) {
+    return (React.createElement("section", null,
+        React.createElement("h2", { className: "font-display text-[1.35rem] font-semibold tracking-tight text-ink" }, title),
+        React.createElement("div", { className: "mt-3 leading-[1.7] text-ink" }, children)));
+}
+function TherapistDetail({ t, top3, others, getP, considering, toggleConsider, onBack, onFinish, onSwitch }) {
+    const facts = [
+        ["Format", t.format],
+        ["Example cost", `${t.cost} (${t.costLabel.toLowerCase()})`],
+        ["Next availability", t.availability],
+        ["Session length", t.session],
+    ];
+    return (React.createElement(Page, null,
+        React.createElement("button", { type: "button", onClick: onBack, className: "inline-flex items-center gap-1.5 rounded-md font-bold text-accent hover:underline" },
+            React.createElement(IconBack, { className: "h-4 w-4" }),
+            "Back to comparison"),
+        React.createElement("header", { className: "mt-8 flex items-center gap-5" },
+            React.createElement(Monogram, { t: t, size: "lg" }),
+            React.createElement("div", null,
+                React.createElement(DemoBadge, null),
+                React.createElement(ScreenTitle, { className: "mt-2" }, t.name),
+                React.createElement("p", { className: "mt-1 text-muted" }, t.role))),
+        React.createElement("dl", { className: "mt-8 grid grid-cols-2 overflow-hidden rounded-xl border border-line bg-line sm:grid-cols-4", style: { gap: "1px" } }, facts.map(([k, v]) => (React.createElement("div", { key: k, className: "bg-surface p-4" },
+            React.createElement("dt", { className: "text-sm text-muted" }, k),
+            React.createElement("dd", { className: "mt-1 font-bold text-ink" }, v))))),
+        React.createElement("div", { className: "mt-12 grid gap-12 lg:grid-cols-[minmax(0,1fr)_380px] lg:gap-16" },
+            React.createElement("div", { className: "max-w-[42rem] space-y-10" },
+                React.createElement(DetailSection, { title: "About" },
+                    React.createElement("p", null, t.about)),
+                React.createElement(DetailSection, { title: "How I usually work" },
+                    React.createElement("p", null, t.howIWork)),
+                React.createElement(DetailSection, { title: "Communication style" },
+                    React.createElement("p", { className: "font-bold" }, t.communication),
+                    React.createElement("p", { className: "mt-1" }, t.style)),
+                React.createElement(DetailSection, { title: "What a first session may look like" },
+                    React.createElement("ol", { className: "space-y-3" }, t.firstSession.map((s, i) => (React.createElement("li", { key: i, className: "flex gap-3.5" },
+                        React.createElement("span", { className: "inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-line-strong text-sm font-bold" }, i + 1),
+                        React.createElement("span", { className: "pt-0.5" }, s)))))),
+                React.createElement(DetailSection, { title: "Experience and areas of practice" },
+                    React.createElement("ul", { className: "flex flex-wrap gap-2" }, t.experience.map((e) => React.createElement("li", { key: e, className: "rounded-lg border border-line-strong bg-surface px-3 py-1.5 text-[0.95rem]" }, e)))),
+                React.createElement(DetailSection, { title: "Personal and contextual experience" },
+                    React.createElement("p", null, t.contextual)),
+                React.createElement(DetailSection, { title: "Practical information" },
+                    React.createElement("dl", { className: "divide-y divide-line rounded-xl border border-line bg-surface" }, [...facts, ["Booking", "Not available in this prototype"]].map(([k, v]) => (React.createElement("div", { key: k, className: "grid grid-cols-[9rem_1fr] gap-3 px-4 py-3" },
+                        React.createElement("dt", { className: "text-muted" }, k),
+                        React.createElement("dd", null, v)))))),
+                React.createElement("p", { className: "text-sm text-muted" }, "This profile was written by the FIT-FIRST team for testing. A real profile would be written with the practitioner.")),
+            React.createElement("aside", { className: "self-start lg:sticky lg:top-24", "aria-labelledby": "align-title" },
+                React.createElement("div", { className: "rounded-2xl border border-line bg-surface p-6" },
+                    React.createElement("h2", { id: "align-title", className: "font-display text-xl font-semibold leading-tight text-ink" }, "How this aligns with your Fit Profile"),
+                    React.createElement("ul", { className: "mt-5 space-y-5" }, top3.map((pid, i) => React.createElement(AlignmentItem, { key: pid, t: t, pid: pid, index: i, getP: getP }))),
+                    others.length > 0 && (React.createElement(React.Fragment, null,
+                        React.createElement("h3", { className: "mt-7 border-t border-line pt-5 text-sm font-bold text-ink" }, "Also important to you"),
+                        React.createElement("ul", { className: "mt-4 space-y-3.5" }, others.map((pid) => React.createElement(AlignmentItem, { key: pid, t: t, pid: pid, getP: getP, size: "sm" }))))),
+                    React.createElement("p", { className: "mt-6 text-sm leading-relaxed text-muted" }, "This compares the demo profile with what you told us. It isn't a prediction of how therapy would go."),
+                    React.createElement("div", { className: "mt-6 space-y-2.5 border-t border-line pt-6" },
+                        considering ? (React.createElement("div", { className: "rounded-xl bg-accent-soft p-4", role: "status" },
+                            React.createElement("p", { className: "flex items-center gap-2 font-bold text-ink" },
+                                React.createElement(IconCheck, { className: "h-5 w-5 text-accent", strokeWidth: 3 }),
+                                "You'd consider ",
+                                t.name),
+                            React.createElement("button", { type: "button", onClick: toggleConsider, className: "mt-1.5 rounded text-sm font-bold text-accent underline underline-offset-4" }, "Undo"))) : (React.createElement(Button, { onClick: toggleConsider, className: "w-full" }, "I'd consider this therapist")),
+                        considering && React.createElement(Button, { onClick: onFinish, className: "w-full" }, "Continue to feedback"),
+                        React.createElement(Button, { variant: "secondary", onClick: onBack, className: "w-full" }, "Back to comparison"))))),
+        React.createElement("nav", { "aria-label": "Other demo profiles", className: "mt-16 border-t border-line pt-8" },
+            React.createElement("h2", { className: "text-sm font-bold text-muted" }, "Other demo profiles"),
+            React.createElement("ul", { className: "mt-3 flex flex-wrap gap-3" }, THERAPISTS.filter((x) => x.id !== t.id).map((x) => (React.createElement("li", { key: x.id },
+                React.createElement("button", { type: "button", onClick: () => onSwitch(x.id), className: "flex items-center gap-3 rounded-xl border border-line bg-surface px-4 py-3 text-left hover:border-line-strong" },
+                    React.createElement(Monogram, { t: x }),
+                    React.createElement("span", null,
+                        React.createElement("span", { className: "block font-bold text-ink" }, x.name),
+                        React.createElement("span", { className: "block text-sm text-muted" }, x.communication))))))))));
+}
+/* ------------------------------------------------------------------ */
+/* Screen 7: Feedback and completion                                   */
+/* ------------------------------------------------------------------ */
+function Likert({ name, legend, value, onChange }) {
+    return (React.createElement("fieldset", null,
+        React.createElement("legend", { className: "font-display text-[1.3rem] font-semibold leading-snug text-ink" },
+            legend,
+            React.createElement("span", { className: "sr-only" }, " 1 means not confident, 5 means very confident.")),
+        React.createElement("div", { className: "mt-5 grid max-w-xl grid-cols-5 gap-2" }, [1, 2, 3, 4, 5].map((n) => (React.createElement("label", { key: n, className: "relative" },
+            React.createElement("input", { type: "radio", name: name, value: n, checked: value === n, onChange: () => onChange(n), className: "peer sr-only" }),
+            React.createElement("span", { className: "flex h-14 cursor-pointer items-center justify-center rounded-xl border border-line-strong bg-surface font-display text-xl font-semibold text-ink transition-colors hover:border-ink/60 peer-checked:border-accent peer-checked:bg-accent peer-checked:text-accent-ink peer-focus-visible:outline peer-focus-visible:outline-[2.5px] peer-focus-visible:outline-offset-2 peer-focus-visible:outline-accent" }, n))))),
+        React.createElement("div", { className: "mt-2 flex max-w-xl justify-between text-sm text-muted", "aria-hidden": "true" },
+            React.createElement("span", null, "Not confident"),
+            React.createElement("span", null, "Very confident"))));
+}
+function Feedback({ fb, setFb, onBack, onSubmit }) {
+    const [error, setError] = useState("");
+    const toggleHelped = (h) => setFb((f) => ({ ...f, helped: f.helped.includes(h) ? f.helped.filter((x) => x !== h) : [...f.helped, h] }));
+    const submit = () => {
+        if (!fb.before || !fb.after) {
+            setError("Choose a number for both confidence questions to submit.");
+            return;
+        }
+        setError("");
+        onSubmit();
+    };
+    return (React.createElement(Page, { width: "max-w-3xl" },
+        React.createElement(ScreenTitle, null, "Help us test FIT-FIRST"),
+        React.createElement("p", { className: "mt-4 text-lg leading-relaxed text-muted" }, "Four quick questions. Your answers stay in this browser tab; nothing is sent or stored."),
+        React.createElement("div", { className: "mt-10 space-y-12" },
+            React.createElement(Likert, { name: "before", value: fb.before, onChange: (n) => setFb((f) => ({ ...f, before: n })), legend: "Before using FIT-FIRST, how confident were you that you could identify a therapist who might suit you?" }),
+            React.createElement(Likert, { name: "after", value: fb.after, onChange: (n) => setFb((f) => ({ ...f, after: n })), legend: "How confident do you feel now?" }),
+            React.createElement("fieldset", null,
+                React.createElement("legend", { className: "font-display text-[1.3rem] font-semibold leading-snug text-ink" }, "What information helped you most?"),
+                React.createElement("p", { className: "mt-1 text-muted" }, "Choose any that apply."),
+                React.createElement("div", { className: "mt-5 flex flex-wrap gap-2.5" }, HELPED_OPTIONS.map((h) => (React.createElement(CheckChip, { key: h, name: "helped", checked: fb.helped.includes(h), onChange: () => toggleHelped(h) }, h)))),
+                fb.helped.includes("Other") && (React.createElement("div", { className: "mt-4" },
+                    React.createElement("label", { htmlFor: "helped-other", className: "block font-bold text-ink" }, "What else helped?"),
+                    React.createElement("input", { id: "helped-other", type: "text", maxLength: 160, value: fb.helpedOther, onChange: (e) => setFb((f) => ({ ...f, helpedOther: e.target.value })), className: "mt-2 w-full rounded-lg border border-line-strong bg-surface px-3.5 py-2.5 text-ink" })))),
+            React.createElement("div", null,
+                React.createElement("label", { htmlFor: "missing", className: "block font-display text-[1.3rem] font-semibold leading-snug text-ink" }, "Was there anything you wanted to know that wasn't shown?"),
+                React.createElement("textarea", { id: "missing", rows: 4, maxLength: 600, value: fb.missing, onChange: (e) => setFb((f) => ({ ...f, missing: e.target.value })), className: "mt-4 w-full rounded-xl border border-line-strong bg-surface px-4 py-3 leading-relaxed text-ink placeholder:text-muted", placeholder: "For example: whether they offer a free intro call" }))),
+        error && React.createElement("p", { role: "alert", className: "mt-8 rounded-lg border border-ochre/50 bg-ochre-soft px-4 py-3 font-bold text-ink" }, error),
+        React.createElement("div", { className: "mt-10 flex flex-wrap gap-3" },
+            React.createElement(Button, { variant: "secondary", onClick: onBack },
+                React.createElement(IconBack, { className: "h-4 w-4" }),
+                "Back to comparison"),
+            React.createElement(Button, { onClick: submit }, "Submit feedback"))));
+}
+function Done({ fb, top3, getP, considering, onRestart, onCompare }) {
+    const names = THERAPISTS.filter((t) => considering.includes(t.id)).map((t) => t.name);
+    const diff = fb.after - fb.before;
+    const helped = fb.helped.map((h) => (h === "Other" && fb.helpedOther.trim() ? `Other: ${fb.helpedOther.trim()}` : h));
+    return (React.createElement(Page, { width: "max-w-3xl" },
+        React.createElement(ScreenTitle, null, "Thanks for testing FIT-FIRST"),
+        React.createElement("p", { className: "mt-5 text-lg leading-relaxed text-ink" }, "FIT-FIRST is an early prototype designed to test whether clearer information about therapist fit can make choosing professional support feel less uncertain."),
+        React.createElement("section", { "aria-labelledby": "summary-title", className: "mt-10 rounded-2xl border border-line bg-surface" },
+            React.createElement("h2", { id: "summary-title", className: "border-b border-line px-6 py-4 font-display text-lg font-semibold text-ink" }, "Your session"),
+            React.createElement("div", { className: "grid grid-cols-2 border-b border-line" },
+                React.createElement("div", { className: "border-r border-line p-6" },
+                    React.createElement("p", { className: "text-sm text-muted" }, "Confidence before"),
+                    React.createElement("p", { className: "mt-1 font-display text-4xl font-semibold text-ink" },
+                        fb.before,
+                        React.createElement("span", { className: "text-xl text-muted" }, "/5"))),
+                React.createElement("div", { className: "p-6" },
+                    React.createElement("p", { className: "text-sm text-muted" }, "Confidence now"),
+                    React.createElement("p", { className: "mt-1 font-display text-4xl font-semibold text-accent" },
+                        fb.after,
+                        React.createElement("span", { className: "text-xl text-muted" }, "/5")),
+                    React.createElement("p", { className: "mt-1 text-sm text-muted" }, diff > 0 ? `Up ${diff}` : diff < 0 ? `Down ${Math.abs(diff)}` : "No change"))),
+            React.createElement("dl", { className: "divide-y divide-line" },
+                React.createElement("div", { className: "grid gap-1 px-6 py-4 sm:grid-cols-[11rem_1fr]" },
+                    React.createElement("dt", { className: "text-muted" }, "Your top 3"),
+                    React.createElement("dd", { className: "text-ink" },
+                        React.createElement("ol", { className: "space-y-0.5" }, top3.map((p, i) => React.createElement("li", { key: p },
+                            i + 1,
+                            ". ",
+                            getP(p).short))))),
+                React.createElement("div", { className: "grid gap-1 px-6 py-4 sm:grid-cols-[11rem_1fr]" },
+                    React.createElement("dt", { className: "text-muted" }, "You'd consider"),
+                    React.createElement("dd", { className: "text-ink" }, names.length ? names.join(", ") : "No one yet")),
+                React.createElement("div", { className: "grid gap-1 px-6 py-4 sm:grid-cols-[11rem_1fr]" },
+                    React.createElement("dt", { className: "text-muted" }, "Helped most"),
+                    React.createElement("dd", { className: "text-ink" }, helped.length ? helped.join(", ") : "Not answered")),
+                React.createElement("div", { className: "grid gap-1 px-6 py-4 sm:grid-cols-[11rem_1fr]" },
+                    React.createElement("dt", { className: "text-muted" }, "Wanted to know"),
+                    React.createElement("dd", { className: "whitespace-pre-wrap text-ink" }, fb.missing.trim() || "Not answered")))),
+        React.createElement("p", { className: "mt-6 text-sm leading-relaxed text-muted" }, "If you're facilitating a test session, this summary is the participant's response. Nothing has been saved."),
+        React.createElement("div", { className: "mt-10 flex flex-wrap gap-3" },
+            React.createElement(Button, { onClick: onRestart }, "Start again"),
+            React.createElement(Button, { variant: "secondary", onClick: onCompare }, "Back to comparison"))));
+}
+/* ------------------------------------------------------------------ */
+/* App                                                                 */
+/* ------------------------------------------------------------------ */
+const EMPTY_FEEDBACK = { before: null, after: null, helped: [], helpedOther: "", missing: "" };
+const EMPTY_PRIOR = { tried: null, changes: [], other: "" };
+function App({ initialStep = "landing", seed = {} } = {}) {
+    const [step, setStep] = useState(initialStep);
+    const [selected, setSelected] = useState(seed.selected || []);
+    const [custom, setCustom] = useState(seed.custom || { open: false, text: "" });
+    const [top3, setTop3] = useState(seed.top3 || []);
+    const [prior, setPrior] = useState(seed.prior || EMPTY_PRIOR);
+    const [viewId, setViewId] = useState(seed.viewId || THERAPISTS[0].id);
+    const [considering, setConsidering] = useState(seed.considering || []);
+    const [compareView, setCompareView] = useState("cards");
+    const [fb, setFb] = useState(seed.fb || EMPTY_FEEDBACK);
+    const customText = custom.text.trim();
+    const customActive = custom.open && customText.length > 0;
+    const selectedAll = customActive ? [...selected, "custom"] : selected;
+    const others = selectedAll.filter((id) => !top3.includes(id));
+    const getP = (id) => id === "custom" ? { id: "custom", short: customText || "Your own priority", text: customText, custom: true } : PRIORITIES.find((p) => p.id === id);
+    const relatedIds = new Set(prior.tried === "yes" ? prior.changes.flatMap((c) => PRIOR_CHANGES.find((x) => x.id === c).related) : []);
+    // Keep the top 3 consistent if the custom priority is cleared.
+    useEffect(() => {
+        if (!customActive)
+            setTop3((t) => t.filter((x) => x !== "custom"));
+    }, [customActive]);
+    // Move focus to the new screen's heading for keyboard and screen-reader users.
+    const firstRender = useRef(true);
+    useEffect(() => {
+        if (firstRender.current) {
+            firstRender.current = false;
+            return;
+        }
+        window.scrollTo(0, 0);
+        const h = document.getElementById("screen-title");
+        if (h)
+            h.focus({ preventScroll: true });
+    }, [step, viewId]);
+    const toggleSelect = (id) => {
+        if (selected.includes(id)) {
+            setSelected(selected.filter((x) => x !== id));
+            setTop3((t) => t.filter((x) => x !== id));
+        }
+        else {
+            setSelected([...selected, id]);
+        }
+    };
+    const toggleConsider = (id) => setConsidering((c) => (c.includes(id) ? c.filter((x) => x !== id) : [...c, id]));
+    const openDetail = (id) => { setViewId(id); setStep("detail"); };
+    const restart = () => {
+        setSelected([]);
+        setCustom({ open: false, text: "" });
+        setTop3([]);
+        setPrior(EMPTY_PRIOR);
+        setConsidering([]);
+        setFb(EMPTY_FEEDBACK);
+        setCompareView("cards");
+        setViewId(THERAPISTS[0].id);
+        setStep("landing");
+    };
+    const therapist = THERAPISTS.find((t) => t.id === viewId);
+    let screen;
+    switch (step) {
+        case "intro":
+            screen = React.createElement(Intro, { onBack: () => setStep("landing"), onStart: () => setStep("prior") });
+            break;
+        case "prior":
+            screen = React.createElement(PriorTherapy, { prior: prior, setPrior: setPrior, onBack: () => setStep("intro"), onNext: () => setStep("select") });
+            break;
+        case "select":
+            screen = (React.createElement(SelectPriorities, { selected: selected, toggle: toggleSelect, custom: custom, setCustom: setCustom, relatedIds: relatedIds, onBack: () => setStep("prior"), onNext: () => setStep("rank") }));
+            break;
+        case "rank":
+            screen = (React.createElement(RankPriorities, { selectedAll: selectedAll, top3: top3, setTop3: setTop3, getP: getP, onBack: () => setStep("select"), onNext: () => setStep("profile") }));
+            break;
+        case "profile":
+            screen = (React.createElement(FitProfile, { top3: top3, others: others, getP: getP, prior: prior, onEdit: () => setStep("select"), onNext: () => setStep("compare") }));
+            break;
+        case "compare":
+            screen = (React.createElement(Compare, { top3: top3, getP: getP, view: compareView, setView: setCompareView, considering: considering, toggleConsider: toggleConsider, onView: openDetail, onEditTop3: () => setStep("rank"), onFinish: () => setStep("feedback") }));
+            break;
+        case "detail":
+            screen = (React.createElement(TherapistDetail, { t: therapist, top3: top3, others: others, getP: getP, considering: considering.includes(therapist.id), toggleConsider: () => toggleConsider(therapist.id), onBack: () => setStep("compare"), onFinish: () => setStep("feedback"), onSwitch: openDetail }));
+            break;
+        case "feedback":
+            screen = React.createElement(Feedback, { fb: fb, setFb: setFb, onBack: () => setStep("compare"), onSubmit: () => setStep("done") });
+            break;
+        case "done":
+            screen = React.createElement(Done, { fb: fb, top3: top3, getP: getP, considering: considering, onRestart: restart, onCompare: () => setStep("compare") });
+            break;
+        default:
+            screen = React.createElement(Landing, { onStart: () => setStep("intro") });
+    }
+    return (React.createElement("div", { className: "flex min-h-screen flex-col bg-paper font-sans text-ink antialiased" },
+        React.createElement("a", { href: "#main", className: "sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-lg focus:bg-surface focus:px-4 focus:py-2 focus:font-bold" }, "Skip to content"),
+        React.createElement(Header, { step: step, onHome: () => setStep("landing") }),
+        React.createElement("main", { id: "main", className: "flex-1" }, screen),
+        React.createElement(Footer, null)));
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(React.createElement(App));
+
+</script>
+</body>
+</html>
