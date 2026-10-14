@@ -38,8 +38,11 @@ window.FF = window.FF || {};
     return h("span", { className: "inline-flex items-center rounded-md border border-dashed border-ochre/70 bg-ochre-soft px-2 py-0.5 text-xs font-bold text-ochre" }, "Fictional demo profile");
   }
 
-  function Monogram({ t }) {
-    return h("span", { "aria-hidden": "true", className: "inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-line-strong bg-paper font-display text-lg font-semibold text-ink" }, t.initials);
+  // Photo, or initials if the therapist has none. Decorative: the name is always written next to it.
+  function Avatar({ t }) {
+    const ring = "h-16 w-16 shrink-0 rounded-full border border-line-strong";
+    if (t.photo) return h("img", { src: t.photo, alt: "", width: 64, height: 64, className: `${ring} bg-sunken object-cover` });
+    return h("span", { "aria-hidden": "true", className: `${ring} inline-flex items-center justify-center bg-paper font-display text-xl font-semibold text-ink` }, t.initials);
   }
 
   const LEVELS = {
@@ -94,7 +97,7 @@ window.FF = window.FF || {};
     return h("footer", { className: "border-t border-line" },
       h("div", { className: "mx-auto max-w-5xl px-4 py-8 text-sm leading-relaxed text-muted sm:px-8" },
         h("p", { className: "max-w-3xl" },
-          "FIT-FIRST is a university design prototype. It doesn't provide therapy, diagnosis or medical advice, and all therapist profiles are fictional. If you need support now, call Lifeline on ",
+          "FIT-FIRST is a university design prototype. It doesn't provide therapy, diagnosis or medical advice, and all therapist profiles are fictional, with free stock photos. If you need support now, call Lifeline on ",
           h("span", { className: "font-bold text-ink" }, "13 11 14"), ", or ",
           h("span", { className: "font-bold text-ink" }, "000"), " in an emergency.")));
   }
@@ -116,5 +119,5 @@ window.FF = window.FF || {};
       children);
   }
 
-  FF.ui = { h, IconBack, IconNext, IconInfo, Button, ScreenTitle, Page, DemoBadge, Monogram, LEVELS, AlignMark, Notice, Header, Footer, Choice, Toggle };
+  FF.ui = { h, IconBack, IconNext, IconInfo, Button, ScreenTitle, Page, DemoBadge, Avatar, LEVELS, AlignMark, Notice, Header, Footer, Choice, Toggle };
 })();

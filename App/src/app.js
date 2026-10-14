@@ -6,7 +6,7 @@
 */
 (function () {
   const { useState, useEffect } = React;
-  const { h, IconBack, IconNext, Button, ScreenTitle, Page, DemoBadge, Monogram, LEVELS, AlignMark, Notice, Header, Footer, Choice, Toggle } = FF.ui;
+  const { h, IconBack, IconNext, Button, ScreenTitle, Page, DemoBadge, Avatar, LEVELS, AlignMark, Notice, Header, Footer, Choice, Toggle } = FF.ui;
 
   // Questions shown, in order. Q11–Q15 (self-management) are out of the MVP.
   // Q3 and Q7 aren't scored; drop them here if the group agrees (proposal open question 2).
@@ -154,7 +154,7 @@
     const other = result.reasons.filter((r) => r.weight > 0 && r.weight < 2);
     return h("article", { className: "rounded-2xl border border-line bg-surface p-5 sm:p-6", "aria-labelledby": `name-${t.id}` },
       h("div", { className: "flex items-start gap-4" },
-        h(Monogram, { t }),
+        h(Avatar, { t }),
         h("div", null,
           h("h2", { id: `name-${t.id}`, className: "font-display text-xl font-semibold text-ink" }, t.name),
           h("p", { className: "text-muted" }, t.registration),
