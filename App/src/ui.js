@@ -90,7 +90,9 @@ window.FF = window.FF || {};
       h("div", { className: "mx-auto flex max-w-5xl items-center justify-between gap-4 px-4 py-3 sm:px-8" },
         h("button", { type: "button", onClick: onHome, className: "flex items-center gap-2.5 rounded-md py-1", "aria-label": "Thera-Fits home" },
           h(Logo), h("span", { className: "font-display text-lg font-semibold tracking-tight text-ink" }, "Thera-Fits")),
-        h("span", { className: "rounded-full border border-line-strong px-3 py-1 text-sm text-muted" }, "Prototype for testing")));
+        h("div", { className: "flex items-center gap-4" },
+          h("span", { className: "hidden rounded-full border border-line-strong px-3 py-1 text-sm text-muted sm:inline" }, "Prototype for testing"),
+          h("a", { href: "../index.html", className: "rounded-md px-1 py-1 text-[0.95rem] font-bold text-accent underline-offset-4 hover:underline" }, "About"))));
   }
 
   function Footer() {

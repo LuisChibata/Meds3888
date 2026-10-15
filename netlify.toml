@@ -1,0 +1,9 @@
+# Netlify site "thera-fits" (https://thera-fits.netlify.app). A push to master publishes; other branches don't.
+# The site mirrors the repo's folders, so relative links work the same from file:// and online:
+#   /  index.html (front page)   /App/  the basic prototype   /Explainer/  the matching explainer
+# Netlify paths are case-insensitive and redirect to lower case (/App/ → /app/, query string kept), so the
+# lower-case /explainer/ links from before the front page existed still work.
+# Only these are copied: documents/, README.md and CLAUDE.md are never published.
+[build]
+  command = "rm -rf dist && mkdir dist && cp index.html dist/ && cp -r App Explainer dist/"
+  publish = "dist"

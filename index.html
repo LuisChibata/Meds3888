@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en-AU">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Thera-Fits prototype</title>
+<meta name="description" content="A university design prototype that helps 18–24-year-olds who haven't started therapy find a therapist who fits them. Try the demo or see how matching decides. All therapist profiles are fictional." />
+<!--
+  Thera-Fits front page: explains the project, then links to the two prototypes (App/ and Explainer/).
+  Plain HTML, no React. Links are relative so they work from file:// and on the published site, which keeps
+  the folder names (/App/, /Explainer/; see netlify.toml). Colour tokens are the same as App/index.html.
+-->
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,600&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --paper: 246 243 237;
+    --surface: 255 255 255;
+    --sunken: 239 235 227;
+    --ink: 23 34 52;
+    --muted: 80 91 108;
+    --line: 223 217 206;
+    --line-strong: 184 176 162;
+    --accent: 28 86 96;
+    --accent-ink: 255 255 255;
+    --accent-soft: 225 236 235;
+    --ochre: 128 88 24;
+    --ochre-soft: 246 236 214;
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --paper: 16 21 28;
+      --surface: 24 31 40;
+      --sunken: 20 26 34;
+      --ink: 236 232 224;
+      --muted: 163 172 186;
+      --line: 44 54 67;
+      --line-strong: 82 94 110;
+      --accent: 124 190 194;
+      --accent-ink: 10 28 32;
+      --accent-soft: 28 50 54;
+      --ochre: 226 182 112;
+      --ochre-soft: 50 41 26;
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --paper: 16 21 28;
+    --surface: 24 31 40;
+    --sunken: 20 26 34;
+    --ink: 236 232 224;
+    --muted: 163 172 186;
+    --line: 44 54 67;
+    --line-strong: 82 94 110;
+    --accent: 124 190 194;
+    --accent-ink: 10 28 32;
+    --accent-soft: 28 50 54;
+    --ochre: 226 182 112;
+    --ochre-soft: 50 41 26;
+    color-scheme: dark;
+  }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    background: rgb(var(--paper));
+    color: rgb(var(--ink));
+    font-family: "Atkinson Hyperlegible", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    font-size: 17px;
+    -webkit-font-smoothing: antialiased;
+  }
+  :focus-visible { outline: 2.5px solid rgb(var(--accent)); outline-offset: 3px; }
+  /* Each choice card is clickable as a whole through its one link. Where :has() works, the card shows the
+     focus ring instead of the link; elsewhere the link keeps its own. */
+  .choice-link::after { content: ""; position: absolute; inset: 0; }
+  @supports selector(:has(*)) {
+    .choice:has(.choice-link:focus-visible) { outline: 2.5px solid rgb(var(--accent)); outline-offset: 3px; }
+    .choice-link:focus-visible { outline: none; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; scroll-behavior: auto !important; }
+  }
+</style>
+<script src="https://cdn.tailwindcss.com/3.4.16"></script>
+<script>
+  const twVar = (name) => `rgb(var(--${name}) / <alpha-value>)`;
+  tailwind.config = {
+    theme: {
+      extend: {
+        colors: {
+          paper: twVar("paper"), surface: twVar("surface"), sunken: twVar("sunken"), ink: twVar("ink"), muted: twVar("muted"),
+          line: twVar("line"), "line-strong": twVar("line-strong"),
+          accent: twVar("accent"), "accent-ink": twVar("accent-ink"), "accent-soft": twVar("accent-soft"),
+          ochre: twVar("ochre"), "ochre-soft": twVar("ochre-soft"),
+        },
+        fontFamily: {
+          display: ['"Bricolage Grotesque"', "ui-sans-serif", "system-ui", "-apple-system", "Segoe UI", "sans-serif"],
+          sans: ['"Atkinson Hyperlegible"', "ui-sans-serif", "system-ui", "-apple-system", "Segoe UI", "Roboto", "sans-serif"],
+        },
+      },
+    },
+  };
+</script>
+</head>
+<body>
+<div class="flex min-h-screen flex-col">
+  <a href="#main" class="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded-lg focus:bg-surface focus:px-4 focus:py-2 focus:font-bold focus:text-ink">Skip to content</a>
+
+  <header class="sticky top-0 z-30 border-b border-line bg-paper/90 backdrop-blur">
+    <div class="mx-auto flex max-w-5xl items-center justify-between gap-4 px-4 py-3 sm:px-8">
+      <div class="flex items-center gap-2.5">
+        <svg viewBox="0 0 28 28" class="h-7 w-7" aria-hidden="true">
+          <rect x="3" y="5" width="22" height="4.5" rx="2.25" fill="rgb(var(--accent))" />
+          <rect x="3" y="11.75" width="16" height="4.5" rx="2.25" fill="rgb(var(--accent))" opacity="0.55" />
+          <rect x="3" y="18.5" width="10" height="4.5" rx="2.25" fill="rgb(var(--accent))" opacity="0.3" />
+        </svg>
+        <span class="font-display text-lg font-semibold tracking-tight text-ink">Thera-Fits</span>
+      </div>
+      <a href="#choose" class="rounded-md px-1 py-1 text-[0.95rem] font-bold text-accent underline-offset-4 hover:underline">Choose a version</a>
+    </div>
+  </header>
+
+  <main id="main" tabindex="-1" class="flex-1 focus:outline-none">
+    <div class="mx-auto w-full max-w-5xl px-4 pb-20 pt-10 sm:px-8 sm:pt-16">
+
+      <!-- The premise -->
+      <section aria-labelledby="page-title" class="max-w-3xl">
+        <p class="text-sm font-bold uppercase tracking-[0.08em] text-muted">University design prototype · MEDS3888 Group 13</p>
+        <h1 id="page-title" class="mt-4 font-display text-[2.1rem] font-semibold leading-[1.08] tracking-[-0.025em] text-ink sm:text-[3rem]">
+          Helping young people find a therapist who fits, before their first session.
+        </h1>
+        <p class="mt-6 text-lg leading-relaxed text-muted sm:text-xl">
+          Thera-Fits is a website prototype for 18–24-year-olds who haven't started therapy yet. It asks what matters to them in plain language, then suggests three therapists who line up, and says where each one doesn't.
+        </p>
+        <p class="mt-6">
+          <a href="#choose" class="inline-flex items-center justify-center gap-2 rounded-xl bg-accent px-6 py-3 text-base font-bold leading-tight text-accent-ink transition-colors hover:bg-accent/90">
+            See the two versions
+            <svg viewBox="0 0 24 24" class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6" /></svg>
+          </a>
+        </p>
+      </section>
+
+      <!-- Why -->
+      <section aria-labelledby="why-title" class="mt-20">
+        <h2 id="why-title" class="font-display text-[1.6rem] font-semibold leading-tight tracking-[-0.02em] text-ink sm:text-[1.9rem]">Why we built it</h2>
+        <div class="mt-6 grid gap-4 md:grid-cols-3">
+          <div class="rounded-2xl border border-line bg-surface p-6">
+            <h3 class="font-display text-lg font-semibold text-ink">Starting is the hard part</h3>
+            <p class="mt-2 leading-relaxed text-muted">We set out to understand why some young people never start therapy. As one person we interviewed put it, help is easy to find online; what's often missing is the trust to open up to someone, and knowing you'll find someone you're comfortable with.</p>
+          </div>
+          <div class="rounded-2xl border border-line bg-surface p-6">
+            <h3 class="font-display text-lg font-semibold text-ink">Fit means more than a job title</h3>
+            <p class="mt-2 leading-relaxed text-muted">Our interviews and survey pointed past qualifications: a therapist's background and culture, how they communicate, and whether they'd understand your situation. Practical things mattered too: cost, availability and how easy it is to book.</p>
+          </div>
+          <div class="rounded-2xl border border-line bg-surface p-6">
+            <h3 class="font-display text-lg font-semibold text-ink">Research sets the rules</h3>
+            <p class="mt-2 leading-relaxed text-muted">Studies on matching say to put safety first and show a short list of two or three. They also say to give little weight to the specialties therapists list for themselves, because therapists aren't good judges of their own strengths.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- How -->
+      <section aria-labelledby="how-title" class="mt-20">
+        <h2 id="how-title" class="font-display text-[1.6rem] font-semibold leading-tight tracking-[-0.02em] text-ink sm:text-[1.9rem]">How it works</h2>
+        <ol class="mt-6 grid gap-x-10 gap-y-8 md:grid-cols-2">
+          <li class="flex gap-4">
+            <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-accent-soft font-display font-semibold text-accent" aria-hidden="true">1</span>
+            <div>
+              <h3 class="font-bold text-ink">Safety comes first</h3>
+              <p class="mt-1 leading-relaxed text-muted">Before any questions, a screen points to Lifeline and 000 for anyone who needs help today. Matching never gets in the way of urgent support.</p>
+            </div>
+          </li>
+          <li class="flex gap-4">
+            <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-accent-soft font-display font-semibold text-accent" aria-hidden="true">2</span>
+            <div>
+              <h3 class="font-bold text-ink">A few questions about what matters</h3>
+              <p class="mt-1 leading-relaxed text-muted">Up to 15 short questions about practical needs, what you'd like from a therapist, and any shared background that matters to you. Nothing about diagnoses or symptoms. Some answers can be marked as must-haves.</p>
+            </div>
+          </li>
+          <li class="flex gap-4">
+            <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-accent-soft font-display font-semibold text-accent" aria-hidden="true">3</span>
+            <div>
+              <h3 class="font-bold text-ink">Must-haves first, then fit</h3>
+              <p class="mt-1 leading-relaxed text-muted">Therapists who miss a must-have are set aside. Of the rest, those trained in an approach the research supports for what you'd like help with come first, and your preferences decide the order after that.</p>
+            </div>
+          </li>
+          <li class="flex gap-4">
+            <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-accent-soft font-display font-semibold text-accent" aria-hidden="true">4</span>
+            <div>
+              <h3 class="font-bold text-ink">A shortlist of three, with reasons</h3>
+              <p class="mt-1 leading-relaxed text-muted">Each therapist comes with where they line up with your answers and where they don't. If no one meets every must-have, Thera-Fits says so and shows the closest fits.</p>
+            </div>
+          </li>
+        </ol>
+        <div class="mt-10 flex gap-3 rounded-xl border border-line bg-surface p-4 text-[0.95rem] leading-relaxed text-ink">
+          <svg viewBox="0 0 24 24" class="mt-0.5 h-5 w-5 shrink-0 text-accent" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5" /><path d="M12 11v5M12 8h.01" /></svg>
+          <p><strong>Demo only.</strong> The eight therapists are fictional, with free stock photos. Nothing you enter is saved or sent: your answers stay in your browser tab.</p>
+        </div>
+      </section>
+
+      <!-- Choose -->
+      <section id="choose" aria-labelledby="choose-title" class="mt-20 scroll-mt-24">
+        <h2 id="choose-title" class="font-display text-[1.6rem] font-semibold leading-tight tracking-[-0.02em] text-ink sm:text-[1.9rem]">Choose where to go</h2>
+        <p class="mt-2 max-w-3xl text-lg leading-relaxed text-muted">There are two versions. Both use the same eight fictional therapists.</p>
+        <div class="mt-6 grid gap-5 md:grid-cols-2">
+
+          <article class="choice relative flex flex-col rounded-2xl border-2 border-accent bg-surface p-6 transition-colors hover:bg-accent-soft/40 sm:p-8">
+            <p class="text-sm font-bold uppercase tracking-[0.08em] text-accent">For anyone</p>
+            <h3 class="mt-2 font-display text-2xl font-semibold tracking-[-0.02em] text-ink">Try the demo</h3>
+            <p class="mt-3 leading-relaxed text-muted">Go through Thera-Fits the way a young person would: the safety screen, up to 15 short questions, then a shortlist of three therapists with the reasons and trade-offs for each.</p>
+            <ul class="mt-5 space-y-2 text-[0.95rem] text-ink">
+              <li class="flex gap-2.5"><span class="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-accent" aria-hidden="true"></span>Takes about 5 minutes</li>
+              <li class="flex gap-2.5"><span class="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-accent" aria-hidden="true"></span>Works on a phone</li>
+            </ul>
+            <p class="mt-auto pt-8">
+              <a href="App/index.html" class="choice-link inline-flex items-center gap-2 rounded-xl bg-accent px-5 py-3 font-bold leading-tight text-accent-ink">
+                Start the demo
+                <svg viewBox="0 0 24 24" class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6" /></svg>
+              </a>
+            </p>
+          </article>
+
+          <article class="choice relative flex flex-col rounded-2xl border-2 border-line-strong bg-surface p-6 transition-colors hover:border-ink/60 sm:p-8">
+            <p class="text-sm font-bold uppercase tracking-[0.08em] text-muted">Behind the scenes</p>
+            <h3 class="mt-2 font-display text-2xl font-semibold tracking-[-0.02em] text-ink">See how matching decides</h3>
+            <p class="mt-3 leading-relaxed text-muted">Answer six questions, or load a test patient, and watch every therapist's points update as you go. Switch between three ranking systems to see how a different rule changes the shortlist.</p>
+            <ul class="mt-5 space-y-2 text-[0.95rem] text-ink">
+              <li class="flex gap-2.5"><span class="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-muted" aria-hidden="true"></span>Shows scores that people using Thera-Fits wouldn't see</li>
+              <li class="flex gap-2.5"><span class="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-muted" aria-hidden="true"></span>Best on a laptop or wider screen</li>
+            </ul>
+            <p class="mt-auto pt-8">
+              <a href="Explainer/index.html" class="choice-link inline-flex items-center gap-2 rounded-xl border border-line-strong bg-paper px-5 py-3 font-bold leading-tight text-ink">
+                Open the explainer
+                <svg viewBox="0 0 24 24" class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6" /></svg>
+              </a>
+            </p>
+          </article>
+
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <footer class="border-t border-line">
+    <div class="mx-auto max-w-5xl space-y-2 px-4 py-8 text-sm leading-relaxed text-muted sm:px-8">
+      <p class="max-w-3xl">Thera-Fits is a University of Sydney MEDS3888 design project by Group 13 (Lived Experience).</p>
+      <p class="max-w-3xl">
+        It doesn't provide therapy, diagnosis or medical advice, and all therapist profiles are fictional, with free stock photos. If you need support now, call Lifeline on
+        <span class="font-bold text-ink">13 11 14</span>, or <span class="font-bold text-ink">000</span> in an emergency.
+      </p>
+    </div>
+  </footer>
+</div>
+</body>
+</html>

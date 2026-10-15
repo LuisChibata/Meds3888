@@ -7,6 +7,8 @@ There are two prototypes:
 - **`App/`, the basic prototype:** the full flow a person would go through, from 15 questions to a shortlist of three.
 - **`Explainer/`, the matching explainer:** six questions and a behind-the-scenes view of how matching decides, with a choice of ranking systems. It's for the project team and supervisor, not for end users.
 
+`index.html` at the top of the repo is the front page: it explains the project, then links to both. It's published at https://thera-fits.netlify.app, which updates whenever `master` changes (see `netlify.toml`).
+
 > **Demo only.** Every therapist profile is fictional. Thera-Fits doesn't provide therapy, diagnosis or medical advice, and nothing you enter leaves your browser. If you need support now, call Lifeline on **13 11 14**, or **000** in an emergency.
 
 ## Try the basic prototype
@@ -90,6 +92,8 @@ Swap in `Explainer/tests.html` for the explainer.
 ## Layout
 
 ```
+index.html                front page: what Thera-Fits is, links to both prototypes
+netlify.toml              how the site is published (front page, App/, Explainer/ only)
 App/                      the basic prototype (no build step)
   index.html              page shell, colour tokens, CDN scripts
   tests.html              matching tests

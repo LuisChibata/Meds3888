@@ -63,7 +63,9 @@ window.FF = window.FF || {};
         h("div", { className: "flex items-center gap-2.5" },
           h(Logo), h("span", { className: "font-display text-lg font-semibold tracking-tight text-ink" }, "Thera-Fits"),
           h("span", { className: "hidden rounded-full border border-line-strong px-3 py-1 text-sm text-muted sm:inline" }, "Matching explainer")),
-        h("a", { href: "../App/index.html", className: "rounded-md px-1 py-1 text-[0.95rem] font-bold text-accent underline-offset-4 hover:underline" }, "Basic prototype")));
+        h("nav", { className: "flex items-center gap-4", "aria-label": "Thera-Fits" },
+          h("a", { href: "../index.html", className: "rounded-md px-1 py-1 text-[0.95rem] font-bold text-accent underline-offset-4 hover:underline" }, "About"),
+          h("a", { href: "../App/index.html", className: "rounded-md px-1 py-1 text-[0.95rem] font-bold text-accent underline-offset-4 hover:underline" }, "Try the demo"))));
   }
 
   function Footer() {
