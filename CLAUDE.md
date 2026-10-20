@@ -29,8 +29,9 @@ USYD design project. A website prototype that helps 18–24-year-olds who have *
 - `documents/`: reference material only, not the place for app code.
   - `FIT-FIRST prototype (1).html`: the existing clickable prototype (the starting point for `App/`).
   - `MEDS3888 - G13 (LIVED EXPERIENCE) workflow.md`: questionnaire Q1–Q20 written (Part A base profile, Part B needs / coping / therapist fit; the Section 3 heading says Q21–Q25 but they don't exist). Canonical wording. The therapist-side questions section is empty.
-  - `MVP matching proposal.md`: **draft for group review.** Therapist schema, question → matching map, the 8 fictional therapists, test patients. Not yet agreed; treat as the working spec.
+  - `MVP matching proposal.md`: **draft for group review.** Therapist schema, question → matching map, the 8 fictional therapists, test patients. Not yet agreed; treat as the working spec. Section 7 (15/10) proposes patient check-ins that build therapist profiles; outside the MVP until the group agrees.
   - `compass_artifact_…_text_markdown.md`: evidence for the matching algorithm.
+  - `articles/`: the papers behind section 7. **Local only, gitignored** (the GitHub repo is public; publisher copyright). Kraus 2011 (twice: `kraus2011.pdf` and a copy under its title), Constantino 2021 (`Constantino.pdf`, the matching trial; it does **not** measure therapist self-assessment), Coyne 2024 (file named after its title, no `.pdf` extension, line breaks in the name; has the self-assessment data).
   - `workflow_wireframe.PNG`: hand sketch. Account creation → data → Home / Self-management / Therapist finder.
   - `MEDS3888 - G13 (LIVED EXPERIENCE) general notes.md`: meeting minutes 19/08–10/10, one meeting per line. **182 KB, almost all base64 images. Never Read it whole**; the text is lines 11–27. Don't `@`-import it.
 
@@ -60,4 +61,4 @@ No build or package.json. Node is installed on the Linux machine, not on the Win
 - **Built (front page, 15/10):** `index.html`: the premise, then a choice between the demo (`App/`) and the explainer.
 - **Not built in `App/`:** therapist detail page, feedback screen, top-3-priorities step.
 - **Deferred:** self-management (only "if we have extra time"); therapist-side account and questions.
-- **Open:** whether the priorities flow stays or the questionnaire replaces it (leaning: questionnaire → top 3 priorities → shortlist of 3); deadline and what is assessed (not in the notes); Q3/Q7 and the "essential" toggle (see the proposal's open questions).
+- **Open:** whether the priorities flow stays or the questionnaire replaces it (leaning: questionnaire → top 3 priorities → shortlist of 3); deadline and what is assessed (not in the notes); Q3/Q7 and the "essential" toggle (see the proposal's open questions); whether to take on patient check-ins that build therapist profiles (proposal section 7, open questions 7–10).

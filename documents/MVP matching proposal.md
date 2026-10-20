@@ -4,7 +4,7 @@ Written by Luis + Claude, 14/10/26. **This is a proposal, not a decision.** Ever
 
 **MVP scope (agreed):** matchmaking only. Patient-focused. 8 fictional therapists as seeded data. No therapist account. No self-management yet (Q11–Q15 are out of the MVP flow).
 
-Sources: questions from `MEDS3888 - G13 (LIVED EXPERIENCE) workflow.md` (Q1–Q20); matching rules from the research doc (`compass_artifact_…`, "Recommendations").
+Sources: questions from `MEDS3888 - G13 (LIVED EXPERIENCE) workflow.md` (Q1–Q20); matching rules from the research doc (`compass_artifact_…`, "Recommendations"); the case for patient check-ins (section 7) from the papers in `documents/articles/`.
 
 ---
 
@@ -138,7 +138,88 @@ Small calls the proposal didn't settle. All easy to reverse.
 
 ---
 
-## 7. Open questions for the group
+## 7. Proposal: therapist profiles built from patient check-ins (15/10)
+
+**Status: proposal only, outside the agreed MVP.** The therapist side is deferred, and our users haven't started therapy yet, so this needs a group decision (open question 7) before anything goes into `App/`.
+
+### The idea
+
+Three profiles, all in the same vocabulary (the option ids of Q6 and Q16–Q20):
+
+| Profile | Comes from | Exists today? |
+|---|---|---|
+| The person's profile | their questionnaire answers | Yes |
+| What the therapist **says** | a therapist questionnaire (open question 5) | Seeded (section 4) |
+| What patients **report** | short check-ins from patients after sessions | No: this proposal |
+
+Over time, what patients report replaces what therapists say about their own strengths.
+
+### Why: the argument from the evidence
+
+1. **Therapists are good at different things.** Of 696 therapists (6,960 patients), 96% were effective in at least one of 12 problem areas, typically 5, and none in all 12. A therapist's ranking in one area shared only 1–9% of its variance with their ranking in another (Kraus et al., 2011). In the matching trial, 76% of therapists had at least one measured strength and one weakness (Coyne et al., 2024).
+2. **Some do harm in specific areas.** Depending on the area, up to 16% of therapists left their average patient reliably worse (Kraus et al., 2011). Under usual assignment, 36% of patients got a therapist who was ineffective in at least one area (Constantino et al., 2021).
+3. **Therapists can't tell which areas are which.** On average they rated themselves more effective than their outcomes showed in 6.4 of 12 areas (Coyne et al., 2024). Most clinicians believe they are above average and can't predict which patients will get worse (Kraus et al., 2011, citing Hannan et al., 2005).
+4. **What patients see today is that self-assessment.** Therapist directories "largely reflect these flawed, non-measurement-based self-assessments" (Coyne et al., 2024).
+5. **Patients' own reports reveal the real profile, and using it helps.** All three studies built therapist profiles from patient-reported outcomes. Matching patients to those measured strengths beat usual assignment (d = 0.75 on overall impairment; Constantino et al., 2021).
+
+So routine patient check-ins are the only source of this information that the evidence supports.
+
+Suggested wording for the report:
+
+> Therapists' effectiveness varies by problem area: most are effective with some concerns, none with all, and a minority leave patients in specific areas worse off (Kraus et al., 2011). Therapists cannot reliably identify these strengths themselves, overestimating their effectiveness in about half of problem areas (Coyne et al., 2024), yet the directories patients rely on are built from those self-assessments. Matching patients to strengths measured from patient-reported outcomes improved results over usual assignment (Constantino et al., 2021). Thera-Fits therefore proposes routine, brief patient check-ins after sessions. These build each therapist's profile from what patients report over time, mark areas as "not enough evidence yet" until enough patients have reported, and use the profile only to shape the shortlist, never as a public rating. This evidence comes from US adults; whether it transfers to 18–24-year-olds in Australia is untested.
+
+### What a check-in would ask
+
+Change, not satisfaction. None of the papers measured how much patients liked their therapist. A "how good was your therapist?" score measures likeability, and turns into the public rating the group has ruled out.
+
+| Check-in question (plain language) | Checks the therapist's claim | Feeds |
+|---|---|---|
+| "Since starting, how have things changed with *[each Q6 area you picked]*?" Much worse / a bit worse / about the same / a bit better / much better | `focus_areas` | per-area track record |
+| "Did they come across as *[their listed Q16 qualities]*?" | `qualities` | qualities points |
+| "How did they mostly communicate?" (Q17 options) | `approach` | communication points |
+| "Did they understand *[the Q18 items you picked]*?" | `context` | experience points |
+
+Only the first row builds the track record. The other three refine the preference layer: none of the papers tested whether patients can judge therapist qualities, so they aren't evidence of skill.
+
+**When:** a one-minute check-in after each session. The studies measured less often (Kraus: first session and about week 16; the trial: every two weeks), and Constantino et al. (2021) say a start and a follow-up are enough to build profiles. Asking every session is our choice, for two reasons: people who stop early still count (trial patients averaged about 6 sessions), and getting worse shows up early.
+
+### How it would feed matching
+
+- **Per therapist, per area, one of three labels:** helped / not enough evidence yet / got worse. Based on the average patient's change against a fixed threshold, not compared with other therapists. Kraus et al. (2011) explain why: when harm is common, comparing with the average can make a harmful therapist look good.
+- **A minimum number of patients per area before a label changes.** The trial used 15+ past patients per therapist; Kraus used each therapist's first 10. More sessions per patient doesn't help: each patient adds one result per area. Rare areas may never reach the minimum, so "not enough evidence yet" is the normal state, not a failure.
+- **"Got worse" in any of the person's areas:** filtered out, with a reason (do no harm: research doc, Stage 4 step 1).
+- **"Helped" in the person's areas:** ranked in the top group, ahead of the clinical-fit band. Until there's data, the clinical-fit band (training in a sourced approach) stays as the fallback.
+- **Never shown to patients as a score or rating.** It only shapes the shortlist, as in the trial, where neither patients nor therapists saw the profiles. Published ratings push therapists to avoid hard cases (research doc, Caveats).
+
+This fits the ranking-system contract in `Explainer/matching/rankers.js` as it is: one new ranking system file and one data file, no change to the page.
+
+### What we'd build, if agreed
+
+In `Explainer/` only, so `App/` and its tests don't move:
+- `data/feedback.js`: a synthetic check-in history for the 8 therapists, labelled as synthetic, shaped like Kraus's findings: a few strong areas each, none strong everywhere, one or two with an area where patients got worse. Ben (lists all 9 areas) shows the point: strong in two, worse in one.
+- `matching/track-record.js`: a ranking system using the rules above.
+- A demo "after your session" form that adds one check-in in memory, so the team can watch a profile and the shortlist change. Nothing is saved.
+
+### Caveats to state openly
+
+- **Our check-in isn't their questionnaire.** The studies used the TOP (58 tested items, about 8 minutes, covering clinical areas such as depression and suicidality). Our "not clinical" rule means a plain-language substitute with no known reliability. It's a prototype of the mechanism, not a validated tool.
+- **Harder caseloads look worse.** The trial adjusted for how hard each patient's case was; we can't. Another reason to keep profiles internal.
+- **"Strength" depends on the rule.** Kraus's rule (did patients reliably improve?) gives about 5 strengths per therapist; the trial's (did they improve more than expected?) gives about 1.5 (open question 10).
+- **A baseline is needed.** The studies measured at the start and later, rather than asking afterwards how much things changed. Our intake questionnaire is the natural start, but it would need a per-area version of Q7 (open question 9).
+- **Narrow evidence.** All three studies are US adults in one network of clinics; nothing tests this in 18–24-year-olds or in Australia (research doc). Whether effectiveness is really area-specific is disputed (Nissen-Lie et al., 2016, find it mostly general); even then, asking patients beats asking therapists. Kraus founded the company behind the TOP. In Coyne et al. (2024), how much a therapist overestimated themselves did not change how much matching helped (a small, exploratory study).
+
+### Sources
+
+In `documents/articles/`:
+- Kraus, D. R., Castonguay, L., Boswell, J. F., Nordberg, S. S., & Hayes, J. A. (2011). Therapist effectiveness: Implications for accountability and patient care. *Psychotherapy Research, 21*(3), 267–276. doi:10.1080/10503307.2011.563249 (`kraus2011.pdf`)
+- Constantino, M. J., Boswell, J. F., Coyne, A. E., Swales, T. P., & Kraus, D. R. (2021). Effect of matching therapists to patients vs assignment as usual on adult psychotherapy outcomes: A randomized clinical trial. *JAMA Psychiatry, 78*(9), 960–969. doi:10.1001/jamapsychiatry.2021.1221 (`Constantino.pdf`)
+- Coyne, A. E., Constantino, M. J., Boswell, J. F., Gaines, A. N., & Kraus, D. R. (2024). Therapist-level moderators of patient-therapist match effectiveness in community psychotherapy. *Administration and Policy in Mental Health and Mental Health Services Research, 51*, 738–752. doi:10.1007/s10488-024-01360-8 (file named after the title)
+
+Cited through the research doc only, not checked against the full text: Constantino et al. (2023), therapists no better than chance at judging their own strengths; Nissen-Lie et al. (2016); Hannan et al. (2005).
+
+---
+
+## 8. Open questions for the group
 
 1. Is an "essential" toggle on language, gender, format and Q18 items acceptable? (Without it, we can't separate "nice to have" from "must have".)
 2. Can Q3 and Q7 be dropped from the MVP? Q7 needs a decision either way, because a frequency question implies we do something with high answers.
@@ -146,3 +227,7 @@ Small calls the proposal didn't settle. All easy to reverse.
 4. Fee bands and wait times are placeholders. Do we want real Australian ranges, or leave it as $ / $$ / $$$?
 5. Auriel's therapist questions should produce the same fields as section 2, so the future therapist form and our seed data match.
 6. Wording for the safety step. Not for us to invent.
+7. Do we take on patient check-ins (section 7)? They go beyond the agreed MVP: the therapist side is deferred, and check-ins happen after someone has started therapy. If yes: a demo in `Explainer/` only, or `App/` too?
+8. Should patients ever see anything from a therapist's track record? Section 7 recommends no: it only shapes the shortlist, as in the trial.
+9. Are the check-in's change question and a per-area "how much is this affecting your day-to-day life?" at intake acceptable under the "not clinical" rule? The intake one is a per-area Q7, which open question 2 is deciding whether to drop.
+10. Which rule decides "helped": did patients reliably improve (Kraus), or improve more than expected (the trial)? And how many patients per area before a label changes?

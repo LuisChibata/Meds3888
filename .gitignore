@@ -1,0 +1,5 @@
+# Claude Code worktrees (temporary checkouts of branches)
+.claude/worktrees/
+
+# Published papers: kept locally for reference, not redistributed (the repo is public)
+documents/articles/
