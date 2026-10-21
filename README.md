@@ -48,7 +48,7 @@ Open `Explainer/story.html` and press Play. It follows Alex, a fictional interna
 
 It plays like a video, or step through it like slides: click a control in the player, then use ← and → (K plays and pauses). The chapter buttons jump to a part, and "Read it as text instead" shows every caption. With reduced motion turned on, it steps without animating. Add `?beat=12` to the URL to open step 12.
 
-Everything in it comes from the same engine as the details page: the names, numbers and labels in the captions are read from the ranking system and the profiles, so they stay true when the data changes. Alex's picture is drawn, not a photo of a real person.
+Everything in it comes from the same engine as the details page: the names, numbers and labels in the captions are read from the ranking system and the profiles, so they stay true when the data changes. Alex's picture is drawn, not a photo of a real person. The therapists' stock photos appear only on the shortlist in chapter 7, the view a real user would get: the photo licence doesn't allow real people to be shown in a bad light, and the earlier chapters show some therapists' patients getting worse.
 
 ## Explore the details
 
@@ -152,6 +152,7 @@ Explainer/                the matching explainer (no build step)
   matching/checklist.js   ranking system: simple checklist (baseline)
   matching/access.js      ranking system: access first
   matching/track-record.js  ranking system: research-guided plus check-ins
+  img/therapists/         stock photos (copies of App's) and their credits: shortlist cards only
   site/                   the pages: draw what the ranking systems and profiles return
     theme.css, theme.js   colour tokens and Tailwind settings, shared by both pages
     player.js             the walkthrough's player: clock, controls, captions, transcript

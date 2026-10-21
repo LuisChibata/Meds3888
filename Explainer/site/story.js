@@ -82,6 +82,7 @@ window.FF = window.FF || {};
     g.look = g.members.every((r) => helpedIn(r.id).length) ? "helped" : g.members.every((r) => worseElsewhere(r.id).length) ? "worse" : null;
   });
   const shortlist = trace.shortlist;
+  shortlist.forEach((r) => { if (r.therapist.photo) new Image().src = r.therapist.photo; });
   const added = shortlist.filter((r) => !before.shortlist.some((x) => x.id === r.id));
   const dropped = before.shortlist.filter((r) => !shortlist.some((x) => x.id === r.id));
 
@@ -114,10 +115,13 @@ window.FF = window.FF || {};
     transform: `translate(${a.x}px, ${a.y}px)${a.s != null && a.s !== 1 ? ` scale(${a.s})` : ""}`, transformOrigin: "top left",
   });
 
-  const Avatar = ({ t, size = 30 }) => h("span", {
-    className: "inline-flex shrink-0 items-center justify-center rounded-full border border-line-strong bg-sunken font-bold text-ink",
+  // Initials, or the therapist's stock photo fading in over them (photo: 0 to 1). Photos only go where nothing
+  // negative is said about the therapist: the Pexels licence (img/therapists/CREDITS.md).
+  const Avatar = ({ t, size = 30, photo = 0 }) => h("span", {
+    className: "relative inline-flex shrink-0 items-center justify-center overflow-hidden rounded-full border border-line-strong bg-sunken font-bold text-ink",
     style: { width: size, height: size, fontSize: size * 0.36 },
-  }, t.initials);
+  }, h("span", { style: { opacity: t.photo ? 1 - photo : 1 } }, t.initials),
+    photo > 0.01 && t.photo && h("img", { src: t.photo, alt: "", draggable: false, className: "absolute inset-0 h-full w-full object-cover", style: { opacity: photo } }));
 
   // Anyone who isn't Alex: a plain silhouette.
   const PersonGlyph = ({ size = 40 }) => h("span", {
@@ -185,6 +189,9 @@ window.FF = window.FF || {};
       h("span", { className: "whitespace-nowrap text-sm text-ink" }, h("span", { className: "font-bold" }, PERSON.name), ` · ${mine.map(short).join(" · ")}`));
   }
 
+  // On the shortlist the photo is a little bigger, and the header grows with it.
+  const PHOTO_GROW = (G) => (G.wide ? 18 : 12);
+
   // A therapist: one box that is a card (chapters 2, 4 and 5), a row (6) or a shortlist card (7). The header
   // stays put; the layers inside fade in and out as the box changes shape.
   function TherapistActor({ a, G }) {
@@ -194,8 +201,8 @@ window.FF = window.FF || {};
       a.numO > 0.01 && h("span", { className: "absolute -left-7 top-0 flex w-6 items-center justify-center font-display text-base font-semibold text-ink", style: { height: Math.min(a.h, 44), opacity: a.numO } }, a.position),
       h("div", { className: "absolute inset-0 overflow-hidden rounded-xl border border-line bg-surface", style: { boxShadow: shadow } },
         h("span", { className: "absolute inset-0 bg-accent-soft", style: { opacity: a.hl * 0.7 } }),
-        h("div", { className: "absolute left-0 top-0 flex items-center gap-2 px-2.5", style: { height: Math.min(Math.max(a.h, 28), G.wide ? 44 : 36) } },
-          h(Avatar, { t, size: G.wide ? 30 : 26 }),
+        h("div", { className: "absolute left-0 top-0 flex items-center gap-2.5 px-2.5", style: { height: Math.min(Math.max(a.h, 28), (G.wide ? 44 : 36) + a.photoO * PHOTO_GROW(G)) } },
+          h(Avatar, { t, size: (G.wide ? 30 : 26) + a.photoO * PHOTO_GROW(G), photo: a.photoO }),
           h("span", { className: "min-w-0 leading-tight" },
             h("span", { className: "block whitespace-nowrap text-sm font-bold text-ink" }, G.wide ? t.name : firstName(t)),
             a.regO > 0.01 && h("span", { className: "block whitespace-nowrap text-[0.7rem] text-muted", style: { opacity: a.regO } }, t.registration))),
@@ -257,7 +264,7 @@ window.FF = window.FF || {};
   function CardLayer({ a, G }) {
     const { fits, miss } = reasons(a.r);
     const shown = fits.slice(0, G.wide ? 3 : 2);
-    return h("div", { className: "absolute inset-x-3 bottom-2 overflow-hidden", style: { top: G.wide ? 52 : 40, opacity: a.cardO } },
+    return h("div", { className: "absolute inset-x-3 bottom-2 overflow-hidden", style: { top: (G.wide ? 52 : 40) + a.photoO * PHOTO_GROW(G), opacity: a.cardO } },
       G.wide && h("p", { className: "text-[0.7rem] font-bold uppercase tracking-[0.08em] text-muted" }, "Why they might fit"),
       h("ul", { className: `${G.wide ? "mt-1.5 space-y-1.5" : "space-y-0.5"}` }, shown.map((x) =>
         h("li", { key: x, className: "flex gap-1.5 text-sm leading-snug text-ink" }, h(IconCheck, { className: "mt-0.5 h-4 w-4 shrink-0 text-accent", strokeWidth: 3 }), x))),
@@ -418,7 +425,7 @@ window.FF = window.FF || {};
     return { w, h, wide, pad: wide ? 20 : 10, top: 52 };
   }
   const tkey = (t) => `t-${t.id}`;
-  const TB = { kind: "therapist", o: 1, dim: 0, ring: 0, regO: 0, chipsO: 0, chipsDim: 0, slotsO: 0, week: 0, slotFocus: 0, spotO: 0, rowO: 0, bar: 0, barO: 0, numO: 0, asideO: 0, hl: 0, tagO: 0, cardO: 0 };
+  const TB = { kind: "therapist", o: 1, dim: 0, ring: 0, regO: 0, chipsO: 0, chipsDim: 0, slotsO: 0, week: 0, slotFocus: 0, spotO: 0, rowO: 0, bar: 0, barO: 0, numO: 0, asideO: 0, hl: 0, tagO: 0, cardO: 0, photoO: 0 };
   const pill = (G) => ({ pill: { kind: "pill", x: G.pad, y: 10, h: 34 } });
 
   // The eight therapists as cards: 4 × 2 on wide screens, 2 × 4 on phones. `reserve` keeps space at the bottom.
@@ -553,11 +560,11 @@ window.FF = window.FF || {};
       const gap = 14;
       const cw = (G.w - 2 * G.pad - (n - 1) * gap) / n;
       const ch = Math.min(G.h - G.top - 6 - G.pad, 270);
-      shortlist.forEach((r, k) => { out[tkey(r.therapist)] = { ...TB, t: r.therapist, r, x: G.pad + k * (cw + gap), y: G.top + 6, w: cw, h: ch, cardO: 1, regO: 1 }; });
+      shortlist.forEach((r, k) => { out[tkey(r.therapist)] = { ...TB, t: r.therapist, r, x: G.pad + k * (cw + gap), y: G.top + 6, w: cw, h: ch, cardO: 1, regO: 1, photoO: 1 }; });
     } else {
       const gap = 8;
       const ch = (G.h - G.top - G.pad - (n - 1) * gap) / n;
-      shortlist.forEach((r, k) => { out[tkey(r.therapist)] = { ...TB, t: r.therapist, r, x: G.pad, y: G.top + k * (ch + gap), w: G.w - 2 * G.pad, h: ch, cardO: 1 }; });
+      shortlist.forEach((r, k) => { out[tkey(r.therapist)] = { ...TB, t: r.therapist, r, x: G.pad, y: G.top + k * (ch + gap), w: G.w - 2 * G.pad, h: ch, cardO: 1, photoO: 1 }; });
     }
     return out;
   };
@@ -822,7 +829,7 @@ window.FF = window.FF || {};
           const x = c.x + c.w + 24;
           out.loop = { kind: "loop", t: r.therapist, x, y: G.top + 6, w: G.w - x - G.pad, h: G.h - G.top - 6 - G.pad, reveal: 3, linear: true, enter: { reveal: 0 } };
         } else {
-          const c = { ...cards[tkey(r.therapist)], h: 112 };
+          const c = { ...cards[tkey(r.therapist)], h: 124 };
           out[tkey(r.therapist)] = { ...c, ring: 1 };
           const y = c.y + c.h + 10;
           out.loop = { kind: "loop", t: r.therapist, x: G.pad, y, w: G.w - 2 * G.pad, h: G.h - y - G.pad, reveal: 3, linear: true, enter: { reveal: 0 } };
@@ -871,7 +878,7 @@ window.FF = window.FF || {};
             h("div", { className: "rounded-2xl border border-line bg-surface p-5" },
               h("h2", { className: "font-display text-xl font-semibold text-ink" }, "What's real and what isn't"),
               h("p", { className: "mt-1.5 text-[0.95rem] leading-relaxed text-muted" },
-                "The therapists, Alex and every check-in are invented. The matching rules are the group's working spec. Check-ins that build therapist profiles are a proposal the group is still discussing."))))),
+                "The therapists, Alex and every check-in are invented. The therapists' photos are free stock photos of people with no connection to these profiles. The matching rules are the group's working spec. Check-ins that build therapist profiles are a proposal the group is still discussing."))))),
       h(Footer, { page: "story" }));
   }
 
