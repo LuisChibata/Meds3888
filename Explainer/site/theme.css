@@ -13,6 +13,8 @@
   --accent-soft: 225 236 235;
   --ochre: 128 88 24;
   --ochre-soft: 246 236 214;
+  --logo: 49 82 97;
+  --logo-cross: 249 226 218;
   /* Bar colour per kind of points (FF.rankers.KINDS). Categorical palette, validated in this order for
      colour-blind separation against the surface in each mode. Bars are never the only way to read a value:
      the breakdown table has every number. */
@@ -37,6 +39,8 @@
     --accent-soft: 28 50 54;
     --ochre: 226 182 112;
     --ochre-soft: 50 41 26;
+    --logo: 124 190 194;
+    --logo-cross: 16 21 28;
     --kind-qualities: 57 135 229;
     --kind-communication: 217 89 38;
     --kind-experience: 25 158 112;
@@ -58,6 +62,8 @@
   --accent-soft: 28 50 54;
   --ochre: 226 182 112;
   --ochre-soft: 50 41 26;
+  --logo: 124 190 194;
+  --logo-cross: 16 21 28;
   --kind-qualities: 57 135 229;
   --kind-communication: 217 89 38;
   --kind-experience: 25 158 112;
