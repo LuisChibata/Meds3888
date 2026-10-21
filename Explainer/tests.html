@@ -26,7 +26,7 @@
 <body>
 <main>
   <h1>Explainer tests</h1>
-  <p>Runs every ranking system in <code>matching/</code> against the data and the fictional test patients. It loads no website code: matching works on its own.
+  <p>Runs every ranking system in <code>matching/</code> against the data, the fictional test patients and the synthetic check-ins. It loads no website code: matching works on its own.
     OPEN marks an expectation the group hasn't settled; it doesn't count as a failure.</p>
   <p id="summary"></p>
   <div id="out"></div>
@@ -34,11 +34,14 @@
 <script src="data/questions.js"></script>
 <script src="data/therapists.js"></script>
 <script src="data/test-patients.js"></script>
+<script src="data/check-ins.js"></script>
 <script src="matching/rankers.js"></script>
 <script src="matching/criteria.js"></script>
+<script src="matching/records.js"></script>
 <script src="matching/research.js"></script>
 <script src="matching/checklist.js"></script>
 <script src="matching/access.js"></script>
+<script src="matching/track-record.js"></script>
 <script>
 "use strict";
 (function () {
@@ -81,17 +84,20 @@
   everything.must = { cultural: true };
   const cases = FF.TEST_PATIENTS.map((p) => [`patient ${p.id}`, p.answers]).concat([["no answers", {}], ["every question answered", everything]]);
   check("Contract", "At least one ranking system, unique ids", R.list().length > 0 && new Set(R.list().map((r) => r.id)).size === R.list().length);
+  const YEAR = { checkIns: FF.CHECK_INS };
+  const contexts = [["", {}], [" with a year of check-ins", YEAR]];
   R.list().forEach((rk) => {
     const problems = [];
-    cases.forEach(([name, answers]) => {
+    contexts.forEach(([suffix, ctx]) => cases.forEach(([caseName, answers]) => {
+      const name = caseName + suffix;
       try {
-        R.check(rk, rk.rank(answers, T), T).forEach((x) => problems.push(`${name}: ${x}`));
-        const tr = R.run(rk.id, answers, T);
+        R.check(rk, rk.rank(answers, T, ctx), T).forEach((x) => problems.push(`${name}: ${x}`));
+        const tr = R.run(rk.id, answers, T, ctx);
         if (tr.results.map((r) => r.position).join() !== T.map((_, i) => i + 1).join()) problems.push(`${name}: positions aren't 1..${T.length}`);
         if (tr.shortlist.length > R.SHORTLIST_SIZE || tr.shortlist.some((r) => r.excluded.length)) problems.push(`${name}: bad shortlist`);
       } catch (e) { problems.push(`${name}: threw ${e.message}`); }
-    });
-    check("Contract", `${rk.name}: valid on ${cases.length} cases`, problems.length === 0, problems.slice(0, 3).join(" · "));
+    }));
+    check("Contract", `${rk.name}: valid on ${cases.length * contexts.length} cases`, problems.length === 0, problems.slice(0, 3).join(" · "));
   });
 
   /* The group's expectations, for the research-guided system (proposal section 5). */
@@ -108,7 +114,7 @@
     if (ex.status) check(g, `status is "${ex.status}"`, tr.status === ex.status, `Got "${tr.status}"`);
     (p.open || []).forEach((o) => (o.notShortlisted || []).forEach((id) =>
       open(g, `${id} not shortlisted`, top.indexOf(id) === -1, `${shortTxt}. ${o.note}`)));
-    details.push({ p, runs: R.list().map((rk) => R.run(rk.id, p.answers, T)) });
+    details.push({ p, runs: R.list().map((rk) => R.run(rk.id, p.answers, T, YEAR)) });
   });
 
   /* Each system's description has to stay true, or the page would be explaining something false. */
@@ -130,6 +136,98 @@
   check("Access first", "Doesn't use the areas therapists list", R.run("access", A, T).results.every((r) => r.parts.every((p) => p.kind !== "areas")));
   check("Access first", "Patient A: Priya not shortlisted (the other answer to the open question)", !find(R.run("access", A, T), "priya").shortlisted);
 
+  /* Profiles from check-ins: the rules in matching/records.js, on small hand-made cases. */
+  const REC = FF.records;
+  const { MIN_PEOPLE, HELPED, WORSE } = REC.RULES;
+  // n people with one area, starting at 3 ("A lot"); deltas are each person's change (positive = better).
+  const people = (deltas, area = "anxiety", tid = "maya") => deltas.map((d, i) => ({
+    id: `h${i}`, therapist: tid, areas: [area], start: 0, finished: true,
+    checkIns: [{ week: 0, session: 0, areas: { [area]: 3 }, overall: 2 }, { week: 4, session: 4, areas: { [area]: 3 - d }, overall: 2 }],
+  }));
+  const times = (n, d) => Array(n).fill(d);
+  const labelOf = (courses, opts) => REC.build(courses, opts).record("maya", "anxiety").label;
+  check("Profiles", `Fewer than ${MIN_PEOPLE} people: not enough evidence, however big the change`, labelOf(people(times(MIN_PEOPLE - 1, 3))) === "not_enough");
+  check("Profiles", `${MIN_PEOPLE} people, average exactly ${HELPED} step better: helped`, labelOf(people(times(MIN_PEOPLE, HELPED))) === "helped");
+  check("Profiles", "Average just under the helped line: no clear change", labelOf(people(times(MIN_PEOPLE - 1, 1).concat(0))) === "same");
+  check("Profiles", `Average exactly ${WORSE} of a step worse: got worse`, labelOf(people(times(MIN_PEOPLE / 2, -1).concat(times(MIN_PEOPLE / 2, 0)))) === "worse");
+  check("Profiles", "Average just above the worse line: no clear change", labelOf(people(times(MIN_PEOPLE / 2 - 1, -1).concat(times(MIN_PEOPLE / 2 + 1, 0)))) === "same");
+  const early = REC.build(people(times(MIN_PEOPLE, 2)), { week: 3 }).record("maya", "anxiety");
+  check("Profiles", "Before anyone's second check-in, nobody counts yet", early.people === 0 && early.waiting === MIN_PEOPLE && early.label === "not_enough", JSON.stringify(early));
+  const zigzag = { id: "z", therapist: "maya", areas: ["anxiety"], start: 0, finished: false, checkIns: [
+    { week: 0, session: 0, areas: { anxiety: 3 }, overall: 2 }, { week: 2, session: 2, areas: { anxiety: 1 }, overall: 1 },
+    { week: 4, session: 4, areas: { anxiety: 2 }, overall: 2 }] };
+  check("Profiles", "A person's change uses their latest check-in, not their best", REC.change(zigzag).areas.anxiety === 1, "Change: " + REC.change(zigzag).areas.anxiety);
+  check("Profiles", "Someone who stopped early still counts, from their last check-in", REC.change(zigzag, 2).areas.anxiety === 2 && REC.change(zigzag, 2).measured);
+
+  /* The synthetic year (data/check-ins.js): valid, and the profiles come out the way the recipe says. */
+  const CI = FF.CHECK_INS;
+  const RECIPE = FF.CHECK_IN_RECIPE;
+  const tids = T.map((t) => t.id);
+  const badCourses = CI.filter((c) => {
+    const ws = c.checkIns.map((x) => x.week);
+    const inScale = (v) => Number.isInteger(v) && v >= 0 && v <= 4;
+    return tids.indexOf(c.therapist) === -1 || !c.areas.length || c.areas.length > 3 || new Set(c.areas).size !== c.areas.length
+      || outside(c.areas, ids("q6")).length || c.checkIns[0].session !== 0 || c.checkIns[0].week !== c.start
+      || ws.some((w, i) => i && w <= ws[i - 1]) || ws[ws.length - 1] > FF.CHECK_IN.YEAR_WEEKS
+      || c.checkIns.some((x) => !inScale(x.overall) || Object.keys(x.areas).sort().join() !== c.areas.slice().sort().join() || c.areas.some((a) => !inScale(x.areas[a])));
+  });
+  check("Synthetic check-ins", `${CI.length} courses, unique ids`, CI.length > 0 && new Set(CI.map((c) => c.id)).size === CI.length);
+  check("Synthetic check-ins", "Every course is valid: known therapist, 1 to 3 Q6 areas, answers 0 to 4 for exactly those areas, weeks in order within the year",
+    badCourses.length === 0, badCourses.slice(0, 3).map((c) => c.id).join(", "));
+  check("Synthetic check-ins", "Recipe covers exactly the 8 therapists", Object.keys(RECIPE).sort().join() === tids.slice().sort().join());
+  const year = REC.build(CI);
+  const mismatches = [];
+  tids.forEach((tid) => REC.areaIds().forEach((a) => {
+    const want = RECIPE[tid][a];
+    const rec = year.record(tid, a);
+    const wantLabel = !want || want[0] < MIN_PEOPLE ? "not_enough" : want[1];
+    if (rec.label !== wantLabel || rec.people !== (want ? want[0] : 0)) mismatches.push(`${tid}/${a}: ${rec.label} from ${rec.people}, recipe ${want ? want.join(" ") : "none"}`);
+  }));
+  check("Synthetic check-ins", "At the end of the year, every therapist's profile matches the recipe", mismatches.length === 0, mismatches.slice(0, 3).join(" · "));
+  const start = REC.build(CI, { week: 0 });
+  check("Synthetic check-ins", "At the start of the year, nobody has a label yet", tids.every((tid) => REC.areaIds().every((a) => start.record(tid, a).label === "not_enough")));
+  check("Synthetic check-ins", "Some people only ever checked in once, and don't count", year.waiting > 0, `${year.waiting} waiting`);
+  const helpedCount = (tid) => REC.areaIds().filter((a) => year.record(tid, a).label === "helped").length;
+  check("Synthetic check-ins", "Shaped like Kraus et al. (2011): every therapist helps with 2 or 3 areas, nobody with all of them",
+    tids.every((tid) => helpedCount(tid) >= 2 && helpedCount(tid) <= 3), tids.map((tid) => `${tid} ${helpedCount(tid)}`).join(", "));
+  const harmful = tids.filter((tid) => REC.areaIds().some((a) => year.record(tid, a).label === "worse"));
+  check("Synthetic check-ins", "Two therapists have an area where patients got worse", harmful.length === 2, harmful.join(", "));
+  const ben = T.find((t) => t.id === "ben");
+  const sam = T.find((t) => t.id === "sam");
+  check("Synthetic check-ins", "Ben lists anxiety and is trained in CBT, but patients with anxiety got worse",
+    ben.focus_areas.indexOf("anxiety") !== -1 && ben.modalities.indexOf("cbt") !== -1 && year.record("ben", "anxiety").label === "worse");
+  check("Synthetic check-ins", "Sam doesn't list anxiety, but patients with anxiety got better",
+    sam.focus_areas.indexOf("anxiety") === -1 && year.record("sam", "anxiety").label === "helped");
+
+  /* Track record: what its description promises. */
+  const order = (tr) => tr.results.map((r) => r.id).join();
+  const sameAsResearch = (ctx) => cases.filter(([, answers]) => order(R.run("track-record", answers, T, ctx)) !== order(R.run("research", answers, T))).map(([n]) => n);
+  check("Track record", "No check-ins: ranks exactly like Research-guided, on every case", sameAsResearch({}).length === 0, sameAsResearch({}).join(", "));
+  check("Track record", "Check-ins that don't count yet (week 0): still exactly like Research-guided", sameAsResearch({ checkIns: CI, week: 0 }).length === 0, sameAsResearch({ checkIns: CI, week: 0 }).join(", "));
+  const yearProblems = [];
+  cases.forEach(([name, answers]) => {
+    const mine = [].concat(answers.q6 || []);
+    R.run("track-record", answers, T, YEAR).results.forEach((r) => {
+      const label = (a) => year.record(r.id, a).label;
+      const worseMine = mine.some((a) => label(a) === "worse");
+      const helpedMine = mine.some((a) => label(a) === "helped");
+      const worseElse = REC.areaIds().some((a) => mine.indexOf(a) === -1 && label(a) === "worse");
+      if (r.excluded.some((e) => e.question === "q6") !== worseMine) yearProblems.push(`${name}/${r.id}: filtered on Q6 only if patients with a picked area got worse`);
+      if (r.group && r.group.order <= 1 && !helpedMine) yearProblems.push(`${name}/${r.id}: top groups need "helped" in a picked area`);
+      if (r.group && helpedMine && r.group.order > 1) yearProblems.push(`${name}/${r.id}: "helped" in a picked area should rank first`);
+      if (r.group && worseElse && r.group.order !== 1 && r.group.order !== 4) yearProblems.push(`${name}/${r.id}: worse elsewhere should rank lower`);
+    });
+  });
+  check("Track record", "With a year of check-ins, every case follows the rules: worse filters, helped ranks first, worse elsewhere ranks lower", yearProblems.length === 0, yearProblems.slice(0, 3).join(" · "));
+  const anxiety = { q6: ["anxiety"] };
+  const trA = R.run("track-record", anxiety, T, YEAR);
+  check("Track record", "Anxiety: Ben is filtered out, although Research-guided puts him in the research group",
+    find(trA, "ben").excluded.length > 0 && find(R.run("research", anxiety, T), "ben").group.order === 0);
+  check("Track record", "Anxiety: Sam ranks in the top group, ahead of the CBT-trained, though he doesn't list it",
+    find(trA, "sam").group.order === 0 && find(trA, "sam").position < find(trA, "jordan").position);
+  check("Track record", "Emotions: Riley is in the top groups but carries a caution (family)",
+    find(R.run("track-record", { q6: ["emotions"] }, T, YEAR), "riley").group.order === 1);
+
   /* Render */
   const failed = results.filter((x) => x.state === "fail");
   const opened = results.filter((x) => x.state === "open");
@@ -149,7 +247,7 @@
     html += "</ul>";
     const d = details.find((x) => "Patient " + x.p.id === group);
     if (d) {
-      html += `<p>${esc(d.p.label)}. Shortlist under each ranking system:</p><div class="wrap"><table><thead><tr><th>Ranking system</th><th>Status</th><th>Shortlist</th><th>Filtered out</th></tr></thead><tbody>`;
+      html += `<p>${esc(d.p.label)}. Shortlist under each ranking system (Track record with the full synthetic year):</p><div class="wrap"><table><thead><tr><th>Ranking system</th><th>Status</th><th>Shortlist</th><th>Filtered out</th></tr></thead><tbody>`;
       d.runs.forEach((tr) => {
         const outIds = tr.results.filter((r) => r.excluded.length).map((r) => r.therapist.name);
         html += `<tr><td>${esc(tr.ranker.name)}</td><td>${tr.status}</td><td>${esc(tr.shortlist.map((r) => `${r.therapist.name} (${Math.round(r.score * 100) / 100}/${r.max})`).join(", ") || "none")}</td><td>${esc(outIds.join(", ") || "none")}</td></tr>`;

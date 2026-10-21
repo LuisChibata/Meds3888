@@ -138,21 +138,23 @@ Small calls the proposal didn't settle. All easy to reverse.
 
 ---
 
-## 7. Proposal: therapist profiles built from patient check-ins (15/10)
+## 7. Proposal: therapist profiles built from patient check-ins (15/10, demo 21/10)
 
-**Status: proposal only, outside the agreed MVP.** The therapist side is deferred, and our users haven't started therapy yet, so this needs a group decision (open question 7) before anything goes into `App/`.
+**Status: proposal, outside the agreed MVP.** A demo is built in `Explainer/` (21/10) so the group can see how it works. Nothing goes into `App/` until the group decides (open question 7). Watch it: `Explainer/story.html`, a three-minute animated walkthrough that follows test patient A (22/10). Try it yourself: `Explainer/index.html?patient=A&ranker=track-record`.
 
 ### The idea
 
-Three profiles, all in the same vocabulary (the option ids of Q6 and Q16–Q20):
+Thera-Fits builds two kinds of profile in the same vocabulary (the options of Q6 and Q16–Q20): one of the person, and one of each therapist (what they say, next to what their patients report). Matching connects them. The profiles are the part nobody else has. Matching is one use of them: the deeper problem is getting reliable data on how well therapists help, and on how much patients improve.
 
 | Profile | Comes from | Exists today? |
 |---|---|---|
-| The person's profile | their questionnaire answers | Yes |
+| The person's profile | their questionnaire answers, then their check-ins | Questionnaire: yes. Check-ins: demo |
 | What the therapist **says** | a therapist questionnaire (open question 5) | Seeded (section 4) |
-| What patients **report** | short check-ins from patients after sessions | No: this proposal |
+| What patients **report** | short check-ins from patients during therapy | Demo, with a synthetic year of check-ins |
 
 Over time, what patients report replaces what therapists say about their own strengths.
+
+**People see very little of this.** The person sees a few plain lines about themselves ("Working on: Study · Anxiety", then later "Since they started: Study: better · Overall: better"), never the data behind them, and never a therapist's record. Therapist profiles only shape the shortlist (open question 8).
 
 ### Why: the argument from the evidence
 
@@ -166,51 +168,96 @@ So routine patient check-ins are the only source of this information that the ev
 
 Suggested wording for the report:
 
-> Therapists' effectiveness varies by problem area: most are effective with some concerns, none with all, and a minority leave patients in specific areas worse off (Kraus et al., 2011). Therapists cannot reliably identify these strengths themselves, overestimating their effectiveness in about half of problem areas (Coyne et al., 2024), yet the directories patients rely on are built from those self-assessments. Matching patients to strengths measured from patient-reported outcomes improved results over usual assignment (Constantino et al., 2021). Thera-Fits therefore proposes routine, brief patient check-ins after sessions. These build each therapist's profile from what patients report over time, mark areas as "not enough evidence yet" until enough patients have reported, and use the profile only to shape the shortlist, never as a public rating. This evidence comes from US adults; whether it transfers to 18–24-year-olds in Australia is untested.
+> Therapists' effectiveness varies by problem area: most are effective with some concerns, none with all, and a minority leave patients in specific areas worse off (Kraus et al., 2011). Therapists cannot reliably identify these strengths themselves, overestimating their effectiveness in about half of problem areas (Coyne et al., 2024), yet the directories patients rely on are built from those self-assessments. Matching patients to strengths measured from patient-reported outcomes improved results over usual assignment (Constantino et al., 2021). Thera-Fits therefore proposes brief, routine patient check-ins during therapy. These build each therapist's profile from what patients report over time, mark areas as "not enough evidence yet" until enough patients have reported, and use the profile only to shape the shortlist, never as a public rating. This evidence comes from US adults; whether it transfers to 18–24-year-olds in Australia is untested.
 
-### What a check-in would ask
+### What a check-in asks
 
 Change, not satisfaction. None of the papers measured how much patients liked their therapist. A "how good was your therapist?" score measures likeability, and turns into the public rating the group has ruled out.
 
-| Check-in question (plain language) | Checks the therapist's claim | Feeds |
+The same questions every time, so change is **measured** (first answer against latest), never asked. The studies did the same: they measured at the start and later, rather than asking afterwards how much things had changed.
+
+| Question (plain language) | Answers | Feeds |
 |---|---|---|
-| "Since starting, how have things changed with *[each Q6 area you picked]*?" Much worse / a bit worse / about the same / a bit better / much better | `focus_areas` | per-area track record |
-| "Did they come across as *[their listed Q16 qualities]*?" | `qualities` | qualities points |
-| "How did they mostly communicate?" (Q17 options) | `approach` | communication points |
-| "Did they understand *[the Q18 items you picked]*?" | `context` | experience points |
+| "How much is *[each Q6 area they picked, up to 3]* getting in the way of your day-to-day life right now?" | Not at all / A little / Somewhat / A lot / Very much | the therapist's record in that area, and the person's own progress |
+| "Overall, how are things going for you right now?" | Really well / Fairly well / Okay / Not so well / Really badly | the person's own progress |
 
-Only the first row builds the track record. The other three refine the preference layer: none of the papers tested whether patients can judge therapist qualities, so they aren't evidence of skill.
+Our own wording, inspired by brief outcome measures (ORS, MyLifeTracker) but not copied, and not a validated tool. The area question reuses the Q6 option text, so no new labels are introduced.
 
-**When:** a one-minute check-in after each session. The studies measured less often (Kraus: first session and about week 16; the trial: every two weeks), and Constantino et al. (2021) say a start and a follow-up are enough to build profiles. Asking every session is our choice, for two reasons: people who stop early still count (trial patients averaged about 6 sessions), and getting worse shows up early.
+Not in the demo: asking whether the therapist came across as their listed Q16 qualities, communicated as they said (Q17), or understood the person's Q18 items. These would refine the preference layer, but none of the papers tested whether patients can judge them, so they aren't evidence of skill.
 
-### How it would feed matching
+**When:** before the first session, after every second session, and when they finish or stop. The first check-in is the baseline, so intake doesn't need a per-area Q7 (open question 9). The trial measured about every two weeks, and Constantino et al. (2021) say a start and a follow-up are enough to build profiles. Every second session keeps it light, while people who stop early still count from their last check-in (trial patients averaged about 6 sessions).
 
-- **Per therapist, per area, one of three labels:** helped / not enough evidence yet / got worse. Based on the average patient's change against a fixed threshold, not compared with other therapists. Kraus et al. (2011) explain why: when harm is common, comparing with the average can make a harmful therapist look good.
-- **A minimum number of patients per area before a label changes.** The trial used 15+ past patients per therapist; Kraus used each therapist's first 10. More sessions per patient doesn't help: each patient adds one result per area. Rare areas may never reach the minimum, so "not enough evidence yet" is the normal state, not a failure.
-- **"Got worse" in any of the person's areas:** filtered out, with a reason (do no harm: research doc, Stage 4 step 1).
-- **"Helped" in the person's areas:** ranked in the top group, ahead of the clinical-fit band. Until there's data, the clinical-fit band (training in a sourced approach) stays as the fallback.
-- **Never shown to patients as a score or rating.** It only shapes the shortlist, as in the trial, where neither patients nor therapists saw the profiles. Published ratings push therapists to avoid hard cases (research doc, Caveats).
+### How it feeds matching
 
-This fits the ranking-system contract in `Explainer/matching/rankers.js` as it is: one new ranking system file and one data file, no change to the page.
+The rules, as built in `Explainer/matching/records.js` (the numbers are ours; open question 10):
 
-### What we'd build, if agreed
+- **Each person's change in an area** = their first check-in minus their latest, in steps on the 0–4 scale. A person counts once they have two check-ins.
+- **Per therapist, per area, one of four labels**, from the average person's change against a fixed threshold, not compared with other therapists. Kraus et al. (2011) explain why: when harm is common, comparing with the average can make a harmful therapist look good.
+  - *Not enough evidence yet:* fewer than 10 people (Kraus used each therapist's first 10). Rare areas may never get there, so this is the normal state, not a failure.
+  - *Helped:* the average person is at least 1 step better.
+  - *Got worse:* the average person is at least half a step worse. Deliberately quicker to flag harm than help.
+  - *No clear change:* anything between.
 
-In `Explainer/` only, so `App/` and its tests don't move:
-- `data/feedback.js`: a synthetic check-in history for the 8 therapists, labelled as synthetic, shaped like Kraus's findings: a few strong areas each, none strong everywhere, one or two with an area where patients got worse. Ben (lists all 9 areas) shows the point: strong in two, worse in one.
-- `matching/track-record.js`: a ranking system using the rules above.
-- A demo "after your session" form that adds one check-in in memory, so the team can watch a profile and the shortlist change. Nothing is saved.
+The **Track record** ranking system (`Explainer/matching/track-record.js`) starts from Research-guided and adds:
+
+| Track record, for the person's areas | Group | Closest match level in the trial (Constantino et al., 2021) |
+|---|---|---|
+| "Got worse" in any of the person's areas | filtered out, with a reason (do no harm: research doc, Stage 4 step 1) | stricter than the trial, which could still match at level 4 |
+| "Helped" in one of them, no "got worse" anywhere | 1st: Helped people with this | levels 1–2 |
+| "Helped" in one of them, "got worse" in another area | 2nd: Helped, with a caution | levels 3–4 |
+| Neither: no clear change, or not enough evidence yet | Research-guided's groups, in its order | level 5 |
+| "Got worse" in another area, not "helped" in theirs | last: A caution in another area | not matched |
+
+The order follows the trial's five match levels. Even its lowest, a therapist who wasn't effective in the patient's main areas but wasn't ineffective in any area, beat usual assignment (d = 0.75), and 58.6% of matched patients got only that level. So avoiding a therapist's weak areas carries most of the benefit, which is why "got worse" filters or demotes while "helped" only reorders. With no check-ins, Track record ranks exactly like Research-guided (`Explainer/tests.html` checks this).
+
+**Never shown to patients as a score or rating.** It only shapes the shortlist, as in the trial, where neither patients nor therapists saw the profiles. Published ratings push therapists to avoid hard cases (research doc, Caveats).
+
+The ranking-system contract (`Explainer/matching/rankers.js`) gained an optional third argument, `context`: the check-ins, and the week to read them up to. A ranking system that reads it says so (`usesCheckIns: true`). The others ignore it, and the page still never scores anything.
+
+### What's built (21/10, in `Explainer/` only)
+
+`App/` and its tests don't move.
+
+- **`data/check-ins.js`:** the check-in, and a synthetic year of them. 151 people across the 8 therapists, generated from a short, readable recipe with a fixed seed, so it's the same on every load. About a fifth stop early, and each therapist has one person who checked in once and never came back. It is shaped like Kraus et al. (2011): each therapist helps with 2 or 3 areas, none with all, and two have an area where patients got worse. The stories the recipe tells:
+  - Ben lists all 9 areas and is CBT-trained, but his patients with anxiety got worse.
+  - Jordan lists anxiety and is CBT-trained, but shows no clear change with it.
+  - Sam doesn't list anxiety, but people who came about low mood or loneliness also reported it, and got better.
+  - Riley lists family difficulties, but those patients got worse.
+
+  The recipe is invented, so the group should sign it off (open question 11).
+- **`matching/records.js`:** builds both profiles from check-ins (the rules above). No page code, no ranking.
+- **`matching/track-record.js`:** the ranking system above.
+- **The page, in three steps:**
+  1. **The person's profile:** what the person would see, in plain lines. Below it, "Once they start therapy" lets you try the check-in as this person with a therapist you pick. Their second check-in shows their own progress, and adds them to that therapist's profile.
+  2. **Therapist profiles (behind the scenes):** every therapist and area, what they say next to what patients report, with the person's areas highlighted. A timeline replays the year, and selecting a cell shows every counted person's change and the rule that labelled it.
+  3. **The shortlist:** the existing behind-the-scenes view, for any ranking system.
+- **Tests:** `Explainer/tests.html` now has 67 checks (1 open). New ones check the rules at their boundaries, that the year-end labels match the recipe, and that Track record ranks like Research-guided when there's no data.
+
+Links: `?week=0` starts at the beginning of the year; `?cell=ben.anxiety` opens one therapist's record in one area; `?view=shortlist` opens step 3.
+
+**What changes for the test patients** (end of the synthetic year, Track record against Research-guided):
+
+| Patient | Research-guided | Track record |
+|---|---|---|
+| A | Wei, Layla, Priya | Wei, Layla, **Sam**: his patients with anxiety got better. Priya hasn't treated enough people with anxiety to count |
+| B | Priya, Layla, Maya | the same three, Maya ahead of Layla (family: helped) |
+| C | Sam, Wei, Layla | the same |
+| D | Riley | Riley, now "Helped, with a caution" (family) |
+| E | nobody meets the must-haves | the same |
+
+Patient A shows the open trade-off: Sam has 4 of 14 preference points, against Priya's 4.5, and still makes the shortlist on his track record (open question 12).
 
 ### Caveats to state openly
 
 - **Our check-in isn't their questionnaire.** The studies used the TOP (58 tested items, about 8 minutes, covering clinical areas such as depression and suicidality). Our "not clinical" rule means a plain-language substitute with no known reliability. It's a prototype of the mechanism, not a validated tool.
+- **The year of check-ins is invented.** It is there to show the mechanism. Real check-ins would be noisier: with 10 to 13 people in an area, a label could flip back and forth. The demo's never does, by design.
 - **Harder caseloads look worse.** The trial adjusted for how hard each patient's case was; we can't. Another reason to keep profiles internal.
-- **"Strength" depends on the rule.** Kraus's rule (did patients reliably improve?) gives about 5 strengths per therapist; the trial's (did they improve more than expected?) gives about 1.5 (open question 10).
-- **A baseline is needed.** The studies measured at the start and later, rather than asking afterwards how much things changed. Our intake questionnaire is the natural start, but it would need a per-area version of Q7 (open question 9).
+- **"Strength" depends on the rule.** Kraus's rule (did patients reliably improve?) gives about 5 strengths per therapist; the trial's (did they improve more than expected?) gives about 1.5. The demo follows Kraus (open question 10).
 - **Narrow evidence.** All three studies are US adults in one network of clinics; nothing tests this in 18–24-year-olds or in Australia (research doc). Whether effectiveness is really area-specific is disputed (Nissen-Lie et al., 2016, find it mostly general); even then, asking patients beats asking therapists. Kraus founded the company behind the TOP. In Coyne et al. (2024), how much a therapist overestimated themselves did not change how much matching helped (a small, exploratory study).
 
 ### Sources
 
-In `documents/articles/`:
+Kept locally in `documents/articles/`, not in the repo (publisher copyright):
 - Kraus, D. R., Castonguay, L., Boswell, J. F., Nordberg, S. S., & Hayes, J. A. (2011). Therapist effectiveness: Implications for accountability and patient care. *Psychotherapy Research, 21*(3), 267–276. doi:10.1080/10503307.2011.563249 (`kraus2011.pdf`)
 - Constantino, M. J., Boswell, J. F., Coyne, A. E., Swales, T. P., & Kraus, D. R. (2021). Effect of matching therapists to patients vs assignment as usual on adult psychotherapy outcomes: A randomized clinical trial. *JAMA Psychiatry, 78*(9), 960–969. doi:10.1001/jamapsychiatry.2021.1221 (`Constantino.pdf`)
 - Coyne, A. E., Constantino, M. J., Boswell, J. F., Gaines, A. N., & Kraus, D. R. (2024). Therapist-level moderators of patient-therapist match effectiveness in community psychotherapy. *Administration and Policy in Mental Health and Mental Health Services Research, 51*, 738–752. doi:10.1007/s10488-024-01360-8 (file named after the title)
@@ -227,7 +274,9 @@ Cited through the research doc only, not checked against the full text: Constant
 4. Fee bands and wait times are placeholders. Do we want real Australian ranges, or leave it as $ / $$ / $$$?
 5. Auriel's therapist questions should produce the same fields as section 2, so the future therapist form and our seed data match.
 6. Wording for the safety step. Not for us to invent.
-7. Do we take on patient check-ins (section 7)? They go beyond the agreed MVP: the therapist side is deferred, and check-ins happen after someone has started therapy. If yes: a demo in `Explainer/` only, or `App/` too?
-8. Should patients ever see anything from a therapist's track record? Section 7 recommends no: it only shapes the shortlist, as in the trial.
-9. Are the check-in's change question and a per-area "how much is this affecting your day-to-day life?" at intake acceptable under the "not clinical" rule? The intake one is a per-area Q7, which open question 2 is deciding whether to drop.
-10. Which rule decides "helped": did patients reliably improve (Kraus), or improve more than expected (the trial)? And how many patients per area before a label changes?
+7. Do we take on patient check-ins (section 7)? They go beyond the agreed MVP: the therapist side is deferred, and check-ins happen after someone has started therapy. The demo is in `Explainer/`. Does it go into `App/` too?
+8. Should patients ever see anything from a therapist's track record? Section 7 recommends no: it only shapes the shortlist, as in the trial. The person sees only their own plain-language profile.
+9. Is the check-in question ("How much is *[area]* getting in the way of your day-to-day life right now?", Not at all to Very much) acceptable under the "not clinical" rule? It's asked before the first session too, which replaces a per-area Q7 at intake (open question 2).
+10. Which rule decides "helped": did patients reliably improve (Kraus), or improve more than expected (the trial)? The demo uses Kraus-style fixed thresholds: 10 people per area, 1 step better on average for "helped", half a step worse for "got worse". Are those the right numbers?
+11. Who signs off the synthetic recipe in `Explainer/data/check-ins.js`, which decides each therapist's strengths and weaknesses in the demo?
+12. Should a good track record be able to outrank weak preference fit? For patient A, Track record shortlists Sam (4 of 14 preference points) over Priya (4.5), on what his patients with anxiety report. In the trial, the match level came first, and the coordinator went down the list only until a therapist met practical needs such as insurance. Do we want a floor on preference points?
