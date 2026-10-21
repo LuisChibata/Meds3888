@@ -626,11 +626,11 @@ window.FF = window.FF || {};
   const yearGrid = (G, extra, each) => ({ ...pill(G), ...grid(G, { slotsO: 1, week: YEAR, ...extra }, each), ...counter(G, YEAR) });
 
   const BEATS = [
-    // 1. Meet Alex
+    // 1. Meet Alex. No movement: Alex is already on stage before Play, as the opening picture.
     {
-      chapter: 0, anim: 1.0,
+      chapter: 0, anim: 0,
       caption: `Meet ${PERSON.name}: ${PERSON.about}, and doesn't know where to start. ${PERSON.name} is fictional, like everyone here.`,
-      frame: (G) => alexAt(G, G.w / 2 - 70, (G.h - 156) / 2, 1, { enter: { y: (G.h - 156) / 2 + 14 } }),
+      frame: (G) => alexAt(G, G.w / 2 - 70, (G.h - 156) / 2),
     },
     {
       chapter: 0, anim: 1.2,
