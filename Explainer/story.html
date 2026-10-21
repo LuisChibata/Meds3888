@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en-AU">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>How Thera-Fits works</title>
+<!--
+  Thera-Fits walkthrough: an animated story of how matching works, following one fictional person. For anyone;
+  index.html (the details) is the team's view of the same engine. No build step: open by double-click (needs
+  internet for the CDNs). Classic <script>s sharing a global `FF` namespace; load order matters.
+  It loads the same data/ and matching/ as index.html, so what it shows is what the engine does.
+  ?beat=n opens step n, paused.
+-->
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,600&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="site/theme.css" />
+<style>
+  /* Alex's drawn portrait (site/story.js): the same in light and dark mode. */
+  :root { --alex-skin: 196 138 100; --alex-skin-shade: 168 112 80; --alex-hair: 44 32 27; --alex-hair-light: 74 54 42; --alex-top: 46 111 122; --alex-top-shade: 33 86 96; --alex-strap: 38 48 62; }
+  .story-caption { animation: caption-in .35s ease-out; }
+  @keyframes caption-in { from { opacity: 0; transform: translateY(4px); } }
+</style>
+<script src="https://cdn.tailwindcss.com/3.4.16"></script>
+<script src="site/theme.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/react@18.3.1/umd/react.production.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/react-dom@18.3.1/umd/react-dom.production.min.js"></script>
+</head>
+<body>
+<div id="root"><div id="boot">Loading the walkthrough…</div></div>
+<script src="data/questions.js"></script>
+<script src="data/therapists.js"></script>
+<script src="data/test-patients.js"></script>
+<script src="data/check-ins.js"></script>
+<!-- The story uses Track record, which builds on Research-guided (and compares the two). -->
+<script src="matching/rankers.js"></script>
+<script src="matching/criteria.js"></script>
+<script src="matching/records.js"></script>
+<script src="matching/research.js"></script>
+<script src="matching/track-record.js"></script>
+<script src="site/ui.js"></script>
+<script src="site/profiles.js"></script>
+<script src="site/player.js"></script>
+<script src="site/story.js"></script>
+</body>
+</html>

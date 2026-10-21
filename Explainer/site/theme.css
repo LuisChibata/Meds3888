@@ -1,0 +1,80 @@
+/* Theme for the explainer's pages (index.html, story.html). The same tokens as App/index.html.
+   Colours are space-separated RGB, used through Tailwind (site/theme.js) as rgb(var(--name) / alpha). */
+:root {
+  --paper: 246 243 237;
+  --surface: 255 255 255;
+  --sunken: 239 235 227;
+  --ink: 23 34 52;
+  --muted: 80 91 108;
+  --line: 223 217 206;
+  --line-strong: 184 176 162;
+  --accent: 28 86 96;
+  --accent-ink: 255 255 255;
+  --accent-soft: 225 236 235;
+  --ochre: 128 88 24;
+  --ochre-soft: 246 236 214;
+  /* Bar colour per kind of points (FF.rankers.KINDS). Categorical palette, validated in this order for
+     colour-blind separation against the surface in each mode. Bars are never the only way to read a value:
+     the breakdown table has every number. */
+  --kind-qualities: 42 120 214;
+  --kind-communication: 235 104 52;
+  --kind-experience: 27 175 122;
+  --kind-practical: 237 161 0;
+  --kind-areas: 232 123 164;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: 16 21 28;
+    --surface: 24 31 40;
+    --sunken: 20 26 34;
+    --ink: 236 232 224;
+    --muted: 163 172 186;
+    --line: 44 54 67;
+    --line-strong: 82 94 110;
+    --accent: 124 190 194;
+    --accent-ink: 10 28 32;
+    --accent-soft: 28 50 54;
+    --ochre: 226 182 112;
+    --ochre-soft: 50 41 26;
+    --kind-qualities: 57 135 229;
+    --kind-communication: 217 89 38;
+    --kind-experience: 25 158 112;
+    --kind-practical: 201 133 0;
+    --kind-areas: 213 81 129;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: 16 21 28;
+  --surface: 24 31 40;
+  --sunken: 20 26 34;
+  --ink: 236 232 224;
+  --muted: 163 172 186;
+  --line: 44 54 67;
+  --line-strong: 82 94 110;
+  --accent: 124 190 194;
+  --accent-ink: 10 28 32;
+  --accent-soft: 28 50 54;
+  --ochre: 226 182 112;
+  --ochre-soft: 50 41 26;
+  --kind-qualities: 57 135 229;
+  --kind-communication: 217 89 38;
+  --kind-experience: 25 158 112;
+  --kind-practical: 201 133 0;
+  --kind-areas: 213 81 129;
+  color-scheme: dark;
+}
+body {
+  margin: 0;
+  background: rgb(var(--paper));
+  color: rgb(var(--ink));
+  font-family: "Atkinson Hyperlegible", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  font-size: 17px;
+  -webkit-font-smoothing: antialiased;
+}
+:focus-visible { outline: 2.5px solid rgb(var(--accent)); outline-offset: 3px; }
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; scroll-behavior: auto !important; }
+}
+#boot { display: grid; place-items: center; min-height: 60vh; color: rgb(var(--muted)); font-size: 15px; }

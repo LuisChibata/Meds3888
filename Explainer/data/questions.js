@@ -13,6 +13,8 @@
     Q19  session format       filter when one format is picked
     Q20  practical factors    cost, waiting time, appointment hours
 
+  Options are [id, label] or, for Q6, [id, label, short name]. Short names are ours, not the workflow doc's.
+
   Answers shape (option ids are what matching/ and therapists.js use):
     { q6: ["anxiety"], q16: ["practical", "direct"], q17: "practical", q18: ["lgbtq"], must: { lgbtq: true },
       q19: "video", q20: ["cost", "wait"] }
@@ -25,15 +27,15 @@ FF.QUESTIONS = [
     text: "Which areas of your life have been most challenging recently?",
     hint: "Select up to three.",
     options: [
-      ["study", "Academic pressure or study-related stress"],
-      ["work", "Work-related stress"],
-      ["anxiety", "Anxiety or excessive worrying"],
-      ["low_mood", "Low mood or lack of motivation"],
-      ["family", "Family or relationship difficulties"],
-      ["loneliness", "Loneliness or social isolation"],
-      ["self_esteem", "Self-esteem or confidence"],
-      ["life_changes", "Major life changes"],
-      ["emotions", "Difficulty managing emotions"],
+      ["study", "Academic pressure or study-related stress", "Study"],
+      ["work", "Work-related stress", "Work"],
+      ["anxiety", "Anxiety or excessive worrying", "Anxiety"],
+      ["low_mood", "Low mood or lack of motivation", "Low mood"],
+      ["family", "Family or relationship difficulties", "Family"],
+      ["loneliness", "Loneliness or social isolation", "Loneliness"],
+      ["self_esteem", "Self-esteem or confidence", "Self-esteem"],
+      ["life_changes", "Major life changes", "Life changes"],
+      ["emotions", "Difficulty managing emotions", "Emotions"],
     ],
   },
   {
@@ -102,4 +104,9 @@ FF.question = (id) => FF.QUESTIONS.find((q) => q.id === id);
 FF.optionLabel = (qid, oid) => {
   const o = FF.question(qid).options.find(([id]) => id === oid);
   return o ? o[1] : oid;
+};
+// A short name where there's little room (the profile grid's column headings). Falls back to the full label.
+FF.optionShort = (qid, oid) => {
+  const o = FF.question(qid).options.find(([id]) => id === oid);
+  return o ? o[2] || o[1] : oid;
 };

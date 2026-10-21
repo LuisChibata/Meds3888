@@ -1,13 +1,18 @@
 "use strict";
 /*
-  The explainer page. It never scores anything: it calls FF.rankers.run() and draws what comes back,
-  so a ranking system added in matching/ shows up here without changes to this file.
-  Left: the six questions. Right: behind the scenes, which a person using Thera-Fits wouldn't see.
-  URL: ?patient=A–E loads a test patient, ?ranker=<id> picks a ranking system, ?open=<therapist id> opens a breakdown.
+  The explainer page. It never scores anything: it calls FF.rankers.run() and FF.records.build() and draws what
+  comes back, so a ranking system added in matching/ shows up here without changes to this file.
+  The story has three steps. Left: 1, the person's profile, built from six questions.
+  Right, behind the scenes (what a person using Thera-Fits wouldn't see), under a timeline of patients' check-ins:
+  2, therapist profiles (site/profiles.js), and 3, the shortlist that connects the two.
+  URL: ?patient=A–E loads a test patient, ?ranker=<id> picks a ranking system, ?open=<therapist id> opens a breakdown,
+  ?view=profiles|shortlist picks the tab, ?week=0–52 sets how far into the year of check-ins to look,
+  ?cell=<therapist id>.<area id> opens one cell of the therapist profiles.
 */
 (function () {
   const { useState, useLayoutEffect, useRef } = React;
-  const { h, IconCheck, IconCross, IconInfo, IconChevron, IconUp, IconDown, IconArrow, Button, Notice, DemoBadge, Tag, Swatch, Header, Footer } = FF.ui;
+  const { h, IconCheck, IconCross, IconInfo, IconChevron, IconUp, IconDown, IconArrow, IconPlay, Button, Notice, DemoBadge, Tag, Swatch, Header, Footer } = FF.ui;
+  const { PersonProfile, CheckIn, Timeline, ProfilesView } = FF.profiles;
   const R = FF.rankers;
 
   const list = (v) => (Array.isArray(v) ? v : v ? [v] : []);
@@ -17,6 +22,9 @@
   const firstName = (t) => t.name.replace(/^Dr /, "").split(" ")[0];
   const names = (results) => results.map((r) => r.therapist.name).join(", ");
   const reducedMotion = () => !!(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches);
+
+  // The three steps of the story: the person's profile, therapist profiles, the shortlist.
+  const StepNum = ({ n, on = true }) => h("span", { "aria-hidden": "true", className: `inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full font-display text-sm font-semibold ${on ? "bg-accent text-accent-ink" : "bg-sunken text-muted"}` }, n);
 
   /* ---------------- answers ---------------- */
   function choose(answers, q, id, on) {
@@ -70,13 +78,16 @@
         q.type === "single" && chosen.length > 0 && h(Button, { variant: "quiet", onClick: () => setAnswers(choose(answers, q, null, false)), "aria-label": `Clear answer to ${qn(q.id)}` }, "Clear")));
   }
 
-  function AnswersPane({ answers, setAnswers, patient, edited, load, clear, ranker }) {
+  function AnswersPane({ answers, setAnswers, patient, edited, load, clear, ranker, course, setCourse, week, trace }) {
     const any = FF.QUESTIONS.some((q) => list(answers[q.id]).length > 0);
     return h("section", { "aria-labelledby": "answers-title" },
       h("div", { className: "flex flex-wrap items-center justify-between gap-2" },
-        h("h2", { id: "answers-title", className: "font-display text-2xl font-semibold text-ink" }, "The person's answers"),
+        h("h2", { id: "answers-title", className: "flex items-center gap-2.5 font-display text-2xl font-semibold text-ink" }, h(StepNum, { n: 1 }), "The person's profile"),
         h(Button, { variant: "quiet", onClick: clear, disabled: !any }, "Clear all")),
-      h("div", { className: "mt-3 flex flex-wrap items-center gap-2" },
+      h("div", { className: "mt-3" }, h(PersonProfile, { answers, course, week })),
+      h(CheckIn, { answers, course, setCourse, week, trace }),
+      h("h3", { className: "mt-6 font-display text-xl font-semibold text-ink" }, "Built from their answers"),
+      h("div", { className: "mt-2 flex flex-wrap items-center gap-2" },
         h("span", { className: "text-sm text-muted" }, "Load a test patient:"),
         FF.TEST_PATIENTS.map((p) => {
           const on = patient === p && !edited;
@@ -95,7 +106,7 @@
   /* ---------------- behind the scenes ---------------- */
   function RankerPicker({ ranker, setRankerId, notes }) {
     return h("div", null,
-      h("div", { role: "radiogroup", "aria-label": "Ranking system", className: "grid gap-2 sm:grid-cols-3" },
+      h("div", { role: "radiogroup", "aria-label": "Ranking system", className: "grid gap-2 sm:grid-cols-2" },
         R.list().map((rk) => {
           const on = rk.id === ranker.id;
           return h("label", { key: rk.id, className: "relative flex cursor-pointer" },
@@ -129,7 +140,7 @@
       { big: h(IconInfo, { className: "h-4 w-4" }), label: "Safety screen first, never scored" },
       { big: total, label: "therapists" },
       { big: passed.length, label: "pass the filters" },
-      grouped && { big: passed.filter((r) => r.group.order === top).length, label: `in the ${lowerFirst(topLabel)}` },
+      grouped && { big: passed.filter((r) => r.group.order === top).length, label: `in the top group: ${lowerFirst(topLabel)}` },
       { big: trace.shortlist.length, label: "shortlisted" },
     ].filter(Boolean);
     return h("ol", { className: "flex flex-wrap items-center gap-x-1 gap-y-1.5", "aria-label": "What happens, step by step" },
@@ -299,8 +310,8 @@
       h("span", { className: "h-px flex-1 bg-line-strong" }), children, h("span", { className: "h-px flex-1 bg-line-strong" }));
   }
 
-  function Compare({ answers, ranker, setRankerId }) {
-    const runs = R.list().map((rk) => R.run(rk.id, answers, FF.THERAPISTS));
+  function Compare({ answers, ranker, setRankerId, evidence }) {
+    const runs = R.list().map((rk) => R.run(rk.id, answers, FF.THERAPISTS, evidence));
     const current = runs.find((x) => x.ranker.id === ranker.id);
     const has = (tr, r) => tr.shortlist.some((x) => x.id === r.id);
     return h("section", { "aria-labelledby": "compare-title", className: "mt-8" },
@@ -322,11 +333,36 @@
       })));
   }
 
-  function Scenes({ answers, ranker, setRankerId, trace, inputKey, open, toggle }) {
+  const TABS = [
+    { id: "profiles", n: 2, label: "Therapist profiles" },
+    { id: "shortlist", n: 3, label: "Shortlist" },
+  ];
+
+  // ARIA tabs: arrow keys move between them, only the selected one is in the tab order.
+  function Tabs({ view, setView }) {
+    const go = (id) => { setView(id); requestAnimationFrame(() => { const el = document.getElementById(`tab-${id}`); if (el) el.focus(); }); };
+    const onKeyDown = (e) => {
+      const i = TABS.findIndex((t) => t.id === view);
+      if (e.key === "ArrowRight" || e.key === "ArrowLeft") {
+        e.preventDefault();
+        go(TABS[(i + (e.key === "ArrowRight" ? 1 : TABS.length - 1)) % TABS.length].id);
+      }
+    };
+    return h("div", { role: "tablist", "aria-label": "Behind the scenes", className: "grid grid-cols-2 gap-1 rounded-2xl border border-line bg-surface p-1" },
+      TABS.map((t) => {
+        const on = t.id === view;
+        return h("button", {
+          key: t.id, type: "button", role: "tab", id: `tab-${t.id}`, "aria-selected": on, "aria-controls": `panel-${t.id}`, tabIndex: on ? 0 : -1,
+          onClick: () => setView(t.id), onKeyDown,
+          className: `flex items-center justify-center gap-2 rounded-xl px-3 py-2.5 font-bold leading-tight transition-colors ${on ? "bg-accent-soft text-ink" : "text-muted hover:bg-sunken hover:text-ink"}`,
+        }, h(StepNum, { n: t.n, on }), t.label);
+      }));
+  }
+
+  function ShortlistView({ answers, ranker, setRankerId, trace, inputKey, open, toggle, evidence }) {
     const empty = trace.results.every((r) => !r.max);
-    return h("section", { id: "scenes", tabIndex: -1, "aria-labelledby": "scenes-title", className: "rounded-3xl border border-line bg-sunken/60 p-4 focus:outline-none sm:p-6 lg:sticky lg:top-[4.75rem] lg:max-h-[calc(100vh-6rem)] lg:overflow-y-auto" },
-      h("h2", { id: "scenes-title", className: "font-display text-2xl font-semibold text-ink" }, "Behind the scenes"),
-      h("p", { className: "mt-1 text-[0.95rem] leading-relaxed text-muted" }, "What the person wouldn't see: every therapist's points, and how each decision was made. Select a therapist for their breakdown."),
+    return h("div", null,
+      h("p", { className: "text-[0.95rem] leading-relaxed text-ink" }, "Matching connects the two profiles. Every therapist's points, and how each decision was made. Select a therapist for their breakdown."),
       h("p", { className: "mt-4 text-sm font-bold text-muted" }, "Ranking system"),
       h("div", { className: "mt-1.5" }, h(RankerPicker, { ranker, setRankerId, notes: trace.notes })),
       h("div", { className: "mt-3" }, h(Pipeline, { trace })),
@@ -335,7 +371,29 @@
       empty && h(Notice, { tone: "accent", className: "mt-3" }, "No answers yet, so nobody has points and the order is alphabetical. Answer a question, or load a test patient."),
       h("div", { className: "mt-3" }, h(Board, { trace, inputKey, open, toggle })),
       h(Rules, { ranker }),
-      h(Compare, { answers, ranker, setRankerId }));
+      h(Compare, { answers, ranker, setRankerId, evidence }));
+  }
+
+  function Scenes(props) {
+    const { view, setView, week, setWeek, profile, ranker, setRankerId, answers, trace } = props;
+    return h("section", { id: "scenes", tabIndex: -1, "aria-labelledby": "scenes-title", className: "rounded-3xl border border-line bg-sunken/60 p-4 focus:outline-none sm:p-6 lg:sticky lg:top-[4.75rem] lg:max-h-[calc(100vh-6rem)] lg:overflow-y-auto" },
+      h("h2", { id: "scenes-title", className: "font-display text-2xl font-semibold text-ink" }, "Behind the scenes"),
+      h("p", { className: "mt-1 text-[0.95rem] leading-relaxed text-muted" }, "What the person wouldn't see: therapists' profiles, and how matching uses them."),
+      h("div", { className: "mt-4" }, h(Timeline, { week, setWeek, profile, ranker, useTrackRecord: () => setRankerId("track-record") })),
+      h("div", { className: "mt-4" }, h(Tabs, { view, setView })),
+      h("div", { role: "tabpanel", id: `panel-${view}`, "aria-labelledby": `tab-${view}`, className: "mt-4" },
+        view === "profiles" ? h(ProfilesView, { profile, answers, trace, ranker, course: props.course, week }) : h(ShortlistView, props)));
+  }
+
+  // For anyone new: the animated walkthrough (story.html) tells the same story one step at a time.
+  function WatchFirst() {
+    return h("div", { className: "mt-5 flex max-w-5xl flex-wrap items-center gap-x-4 gap-y-3 rounded-2xl border border-accent/40 bg-accent-soft/60 p-4" },
+      h("span", { "aria-hidden": "true", className: "inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-accent text-accent-ink" }, h(IconPlay, { className: "h-4 w-4" })),
+      h("p", { className: "min-w-0 flex-1 basis-64 text-[0.95rem] leading-snug text-ink" },
+        h("span", { className: "font-bold" }, "New here? Watch how it works first. "),
+        "A short animated walkthrough of the same engine, following one person from their first answers to their shortlist."),
+      h("a", { href: "story.html", className: "inline-flex items-center gap-2 rounded-xl bg-accent px-4 py-2.5 text-[0.95rem] font-bold leading-tight text-accent-ink hover:bg-accent/90" },
+        "Watch the walkthrough", h(IconArrow, { className: "h-4 w-4" })));
   }
 
   /* ---------------- app ---------------- */
@@ -347,15 +405,26 @@
     const [edited, setEdited] = useState(false);
     const [rankerId, setRankerId] = useState(R.get(params.get("ranker")).id);
     const [open, setOpen] = useState(params.get("open") ? [params.get("open")] : []);
+    const W = FF.CHECK_IN.YEAR_WEEKS;
+    const startWeek = Number(params.get("week"));
+    const [week, setWeek] = useState(params.get("week") != null && startWeek >= 0 && startWeek <= W ? Math.round(startWeek) : W);
+    const [view, setView] = useState(TABS.some((t) => t.id === params.get("view")) ? params.get("view") : params.get("open") ? "shortlist" : "profiles");
+    // The person's own course, if they try the check-in: in memory only, added to the synthetic year.
+    const [course, setCourse] = useState(null);
 
     const setAnswers = (a) => { setAnswersState(a); setEdited(true); };
-    const load = (p) => { setAnswersState(p.answers); setPatient(p); setEdited(false); };
-    const clear = () => { setAnswersState({}); setPatient(null); setEdited(false); };
+    // A check-in course belongs to the person, so a different person (or none) starts without one.
+    const load = (p) => { setAnswersState(p.answers); setPatient(p); setEdited(false); setCourse(null); };
+    const clear = () => { setAnswersState({}); setPatient(null); setEdited(false); setCourse(null); };
     const toggle = (id) => setOpen(open.indexOf(id) === -1 ? open.concat(id) : open.filter((x) => x !== id));
 
     const ranker = R.get(rankerId);
-    const trace = R.run(rankerId, answers, FF.THERAPISTS);
-    const inputKey = rankerId + JSON.stringify(answers);
+    // The synthetic year of check-ins, counted up to the timeline's week: therapist profiles, and the context
+    // for ranking systems that read check-ins.
+    const evidence = { checkIns: course ? FF.CHECK_INS.concat(course) : FF.CHECK_INS, week };
+    const profile = FF.records.build(evidence.checkIns, { week });
+    const trace = R.run(rankerId, answers, FF.THERAPISTS, evidence);
+    const inputKey = rankerId + JSON.stringify(answers) + (ranker.usesCheckIns ? `@${week}+${course ? course.checkIns.length : 0}` : "");
     const live = trace.shortlist.length ? `${ranker.name} shortlist: ${names(trace.shortlist)}.` : `${ranker.name}: nobody passes the filters.`;
 
     return h("div", { className: "flex min-h-screen flex-col" },
@@ -363,13 +432,22 @@
       h(Header),
       h("main", { id: "main", tabIndex: -1, className: "flex-1 focus:outline-none" },
         h("div", { className: "mx-auto w-full max-w-7xl px-4 pb-16 pt-8 sm:px-8 sm:pt-10" },
-          h("h1", { className: "font-display text-[1.9rem] font-semibold leading-[1.1] tracking-[-0.025em] text-ink sm:text-[2.4rem]" }, "How matching decides"),
+          h("h1", { className: "font-display text-[1.9rem] font-semibold leading-[1.1] tracking-[-0.025em] text-ink sm:text-[2.4rem]" }, "How Thera-Fits matches"),
           h("p", { className: "mt-3 max-w-3xl text-lg leading-relaxed text-muted" },
-            "Answer six questions, or load a test patient. The right-hand side shows what a person using Thera-Fits wouldn't see: every fictional therapist's points, and how each one was decided. Switch the ranking system to see how a different rule changes the shortlist."),
+            "Thera-Fits builds two profiles in the same language, then connects them. Everything here is fictional or synthetic, and \"Behind the scenes\" is what a person using Thera-Fits wouldn't see."),
+          h(WatchFirst),
+          h("ol", { className: "mt-5 grid max-w-5xl gap-2 sm:grid-cols-3", "aria-label": "How it works" },
+            [
+              [1, "The person's profile", "From their answers. They see a few plain lines, never scores."],
+              [2, "Therapist profiles", "What each therapist says about themselves, next to what their patients report."],
+              [3, "The shortlist", "Matching connects the two. Patients' reports outrank self-description once there are enough."],
+            ].map(([n, title, text]) => h("li", { key: n, className: "flex gap-3 rounded-2xl border border-line bg-surface p-3.5" },
+              h(StepNum, { n }),
+              h("span", null, h("span", { className: "block font-bold leading-6 text-ink" }, title), h("span", { className: "block text-sm leading-snug text-muted" }, text))))),
           h("p", { className: "sr-only", "aria-live": "polite" }, live),
           h("div", { className: "mt-8 grid grid-cols-1 gap-8 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] lg:items-start" },
-            h(AnswersPane, { answers, setAnswers, patient, edited, load, clear, ranker }),
-            h(Scenes, { answers, ranker, setRankerId, trace, inputKey, open, toggle })))),
+            h(AnswersPane, { answers, setAnswers, patient, edited, load, clear, ranker, course, setCourse, week, trace }),
+            h(Scenes, { answers, ranker, setRankerId, trace, inputKey, open, toggle, evidence, profile, week, setWeek, view, setView, course })))),
       h(Footer));
   }
 

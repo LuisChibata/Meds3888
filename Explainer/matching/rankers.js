@@ -14,8 +14,11 @@
       summary: "One plain sentence on what it puts first."
       rules:   ["Each rule in plain language, in the order it's applied.", ...]
       uses:    { q6: "Research group", q16: "Points ×3", ... }   how it uses each question (every id in FF.QUESTIONS)
-      rank(answers, therapists) → { results: [Result, ...], notes: ["Optional plain-language note", ...] }
+      usesCheckIns: true                          optional: it reads context.checkIns, so the page's check-in timeline changes it
+      rank(answers, therapists, context) → { results: [Result, ...], notes: ["Optional plain-language note", ...] }
     }
+  context: evidence beyond the answers, the same for every system: { checkIns, week } (data/check-ins.js:
+  patients' check-ins, counted up to that week). Always an object; a system that doesn't use it ignores it.
 
   Result: one per therapist, in any order. rank() doesn't sort: run() does, the same way for every system,
   so the ordering rule shown on the page (ORDER_RULE) is always true.
@@ -64,9 +67,9 @@ window.FF = window.FF || {};
     a.therapist.name.localeCompare(b.therapist.name);
 
   // The only entry point the page uses.
-  function run(id, answers, therapists) {
+  function run(id, answers, therapists, context) {
     const ranker = get(id);
-    const out = ranker.rank(answers, therapists);
+    const out = ranker.rank(answers, therapists, context || {});
     const byId = {};
     therapists.forEach((t) => { byId[t.id] = t; });
     const results = out.results.map((r) => {
