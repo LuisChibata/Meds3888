@@ -6,3 +6,6 @@ documents/articles/
 
 # Luis's personal notes: private, never published
 personal/
+
+# The group's working script stays local: Presentation/ itself is published
+Presentation/*.md

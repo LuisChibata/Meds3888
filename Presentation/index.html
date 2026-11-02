@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en-AU" data-theme="light">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Thera-Fits: take two</title>
+<meta name="robots" content="noindex" />
+<link rel="icon" type="image/svg+xml" href="../Explainer/img/logo.svg" />
+<!--
+  Allysa's walkthrough for the final presentation: press Play. Runs offline by double-click. Keep this folder next
+  to Explainer/, whose data, matching rules and therapist photos it uses unchanged.
+  ?beat=n opens step n, paused. ?live is the stage version, one key press per cue (?live&cue=n opens cue n).
+-->
+<link rel="stylesheet" href="vendor/fonts.css" />
+<link rel="stylesheet" href="../Explainer/site/theme.css" />
+<style>
+  /* The drawn cartoons (show.js). Change these to look like the real Allysa and Vanessa. */
+  :root {
+    --allysa-skin: 214 164 128; --allysa-skin-shade: 190 138 104; --allysa-hair: 52 36 30; --allysa-top: 28 86 96; --allysa-bg: 225 236 235;
+    --vanessa-skin: 226 182 148; --vanessa-skin-shade: 202 154 122; --vanessa-hair: 110 62 40; --vanessa-top: 128 88 24; --vanessa-bg: 246 236 214;
+  }
+  /* The stage version (?live) fills the screen. */
+  html.live, html.live body, html.live #root { height: 100%; overflow: hidden; }
+  body.hide-cursor { cursor: none; }
+  .story-caption { animation: caption-in .35s ease-out; }
+  @keyframes caption-in { from { opacity: 0; transform: translateY(4px); } }
+</style>
+<script src="vendor/tailwind.js"></script>
+<script src="../Explainer/site/theme.js"></script>
+<script src="vendor/react.js"></script>
+<script src="vendor/react-dom.js"></script>
+</head>
+<body>
+<div id="root"><div id="boot">Loading…</div></div>
+<script src="../Explainer/data/questions.js"></script>
+<script src="../Explainer/data/therapists.js"></script>
+<script src="../Explainer/data/check-ins.js"></script>
+<script src="../Explainer/matching/rankers.js"></script>
+<script src="../Explainer/matching/criteria.js"></script>
+<script src="../Explainer/matching/records.js"></script>
+<script src="../Explainer/matching/research.js"></script>
+<script src="../Explainer/matching/track-record.js"></script>
+<script src="../Explainer/site/ui.js"></script>
+<script src="../Explainer/site/player.js"></script>
+<script src="show.js"></script>
+</body>
+</html>
