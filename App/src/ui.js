@@ -88,14 +88,24 @@ window.FF = window.FF || {};
       h("rect", { x: "69.3", y: "19.6", width: "14.5", height: "4.8", rx: "1", fill: "rgb(var(--logo-cross))" }));
   }
 
+  // The same menu on every page of the site (the front page and Explainer/ have their own copies of it).
+  const NAV = [
+    ["About", "About", "../index.html"],
+    ["Try the demo", "Demo", "index.html", true],
+    ["How it works", "How it works", "../Explainer/story.html"],
+    ["Matching details", "Details", "../Explainer/index.html"],
+    ["Allysa's presentation", "Presentation", "../Presentation/index.html"],
+  ];
+
   function Header({ onHome }) {
     return h("header", { className: "sticky top-0 z-30 border-b border-line bg-paper/90 backdrop-blur" },
-      h("div", { className: "mx-auto flex max-w-5xl items-center justify-between gap-4 px-4 py-3 sm:px-8" },
+      h("div", { className: "mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-x-4 gap-y-1 px-4 py-3 sm:px-8" },
         h("button", { type: "button", onClick: onHome, className: "flex items-center gap-2.5 rounded-md py-1", "aria-label": "Thera-Fits home" },
           h(Logo), h("span", { className: "font-display text-lg font-semibold tracking-tight text-ink" }, "Thera-Fits")),
-        h("div", { className: "flex items-center gap-4" },
-          h("span", { className: "hidden rounded-full border border-line-strong px-3 py-1 text-sm text-muted sm:inline" }, "Prototype for testing"),
-          h("a", { href: "../index.html", className: "rounded-md px-1 py-1 text-[0.95rem] font-bold text-accent underline-offset-4 hover:underline" }, "About"))));
+        h("nav", { className: "flex flex-wrap items-center gap-x-2 sm:gap-x-4", "aria-label": "Thera-Fits" }, NAV.map(([long, brief, href, here]) => h("a", {
+          key: href, href, "aria-current": here ? "page" : undefined,
+          className: `rounded-md px-0.5 py-1 text-sm font-bold underline-offset-4 hover:underline sm:px-1 sm:text-[0.95rem] ${here ? "text-ink underline decoration-2" : "text-accent"}`,
+        }, h("span", { className: "sm:hidden" }, brief), h("span", { className: "hidden sm:inline" }, long))))));
   }
 
   function Footer() {

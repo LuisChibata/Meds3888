@@ -3,11 +3,12 @@
   A player for an animated walkthrough: one clock, the controls (play, pause, step, scrub, chapters), the captions
   and a transcript. It knows nothing about therapists: site/story.js gives it the beats and draws the stage.
 
-  A beat: { chapter, caption, sr, anim, hold }
+  A beat: { chapter, caption, sr, anim, hold, stop }
     caption  the words on screen. The stage is hidden from screen readers, so the caption carries the story
     sr       optional: what the stage shows, read out after the caption and listed in the transcript
     anim     seconds of movement
     hold     seconds to read afterwards (default: from the caption's length)
+    stop     optional: Play stops when this beat ends, and waits to be pressed again
   stage(i, p, size) draws beat i, with p running 0 → 1 during the movement and staying at 1 while holding.
   Because the stage is a pure function of time, scrubbing works both ways, any moment can be linked
   (?beat=n opens beat n, paused, once it has moved), and reduced motion only has to skip to p = 1.
@@ -71,6 +72,15 @@ window.FF = window.FF || {};
     return { i, p: beats[i].anim ? clamp01(local / beats[i].anim) : 1 };
   }
 
+  // Where Play stops next, after `from`: the end of the next beat that asks to stop, or the end of the story.
+  function nextStop(tl, beats, from) {
+    for (let j = 0; j < beats.length; j += 1) {
+      const at = tl.starts[j] + beats[j].anim + beats[j].hold - 0.01;
+      if (beats[j].stop && at > from + 0.001) return at;
+    }
+    return tl.total;
+  }
+
   // Each beat gets a hold long enough to read its caption: a second, plus about a quarter of a second a word.
   const withHolds = (beats) => beats.map((b) => ({ anim: 1.2, ...b, hold: b.hold != null ? b.hold : 1 + words(b.caption) * 0.26 }));
 
@@ -110,6 +120,8 @@ window.FF = window.FF || {};
     const setTime = (t) => { timeRef.current = t; setTimeState(t); };
     // null = stopped, "play" = playing, a number = moving to that time, then stopping (a step while paused).
     const [run, setRun] = useState(null);
+    const latest = useRef(null);
+    latest.current = { tl, beats };
 
     useEffect(() => {
       if (run == null) return undefined;
@@ -118,12 +130,13 @@ window.FF = window.FF || {};
       const tick = (now) => {
         const dt = last == null ? 0 : Math.min(0.1, (now - last) / 1000);
         last = now;
-        let t = timeRef.current + dt;
+        const from = timeRef.current;
+        let t = from + dt;
         if (reduced && run === "play") {
           const at = locate(tl, beats, t);
           if (t < endOf(at.i)) t = endOf(at.i);
         }
-        const stop = run === "play" ? tl.total : Math.min(run, tl.total);
+        const stop = run === "play" ? nextStop(latest.current.tl, latest.current.beats, from) : Math.min(run, latest.current.tl.total);
         if (t >= stop) { setTime(stop); setRun(null); return; }
         setTime(t);
         raf = requestAnimationFrame(tick);

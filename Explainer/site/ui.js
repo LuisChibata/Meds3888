@@ -75,21 +75,29 @@ window.FF = window.FF || {};
       h("rect", { x: "69.3", y: "19.6", width: "14.5", height: "4.8", rx: "1", fill: "rgb(var(--logo-cross))" }));
   }
 
-  // page: "story" (story.html, the walkthrough) or "details" (index.html). Each links to the other.
-  function Header({ page = "details" } = {}) {
-    const link = "rounded-md px-1 py-1 text-[0.95rem] font-bold text-accent underline-offset-4 hover:underline";
-    const story = page === "story";
+  // The same menu on every page of the site (the front page and App/ have their own copies of it).
+  // page: which one this is. base: the way to Explainer/ from the page (Presentation/ borrows this header).
+  const NAV = [
+    ["about", "About", "About", () => "../index.html"],
+    ["demo", "Try the demo", "Demo", () => "../App/index.html"],
+    ["story", "How it works", "How it works", (base) => `${base}story.html`],
+    ["details", "Matching details", "Details", (base) => `${base}index.html`],
+    ["presentation", "Allysa's presentation", "Presentation", () => "../Presentation/index.html"],
+  ];
+  const PILL = { story: "How it works", details: "Matching details", presentation: "Final presentation" };
+
+  function Header({ page = "details", base = "" } = {}) {
+    const link = "rounded-md px-0.5 py-1 text-sm font-bold underline-offset-4 hover:underline sm:px-1 sm:text-[0.95rem]";
     return h("header", { className: "sticky top-0 z-30 border-b border-line bg-paper/90 backdrop-blur" },
-      h("div", { className: "mx-auto flex max-w-7xl items-center justify-between gap-3 px-4 py-3 sm:px-8" },
+      h("div", { className: "mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-x-3 gap-y-1 px-4 py-3 sm:px-8" },
         h("a", { href: "../index.html", className: "flex shrink-0 items-center gap-2.5 rounded-md", "aria-label": "Thera-Fits: about the project" },
           h(Logo), h("span", { className: "font-display text-lg font-semibold tracking-tight text-ink" }, "Thera-Fits"),
-          h("span", { className: "hidden rounded-full border border-line-strong px-3 py-1 text-sm text-muted md:inline" }, story ? "How it works" : "Matching details")),
-        h("nav", { className: "flex items-center gap-3 sm:gap-4", "aria-label": "Thera-Fits" },
-          h("a", { href: "../index.html", className: `${link} hidden sm:inline` }, "About"),
-          story
-            ? h("a", { href: "index.html", className: link }, h("span", { className: "sm:hidden" }, "Details"), h("span", { className: "hidden sm:inline" }, "Explore the details"))
-            : h("a", { href: "story.html", className: link }, "How it works"),
-          h("a", { href: "../App/index.html", className: link }, h("span", { className: "sm:hidden" }, "Demo"), h("span", { className: "hidden sm:inline" }, "Try the demo")))));
+          h("span", { className: "hidden rounded-full border border-line-strong px-3 py-1 text-sm text-muted xl:inline" }, PILL[page])),
+        h("nav", { className: "flex flex-wrap items-center gap-x-2 sm:gap-x-4", "aria-label": "Thera-Fits" },
+          NAV.map(([id, long, brief, href]) => h("a", {
+            key: id, href: href(base), "aria-current": id === page ? "page" : undefined,
+            className: `${link} ${id === page ? "text-ink underline decoration-2" : "text-accent"}`,
+          }, h("span", { className: "sm:hidden" }, brief), h("span", { className: "hidden sm:inline" }, long))))));
   }
 
   function Footer({ page = "details" } = {}) {
